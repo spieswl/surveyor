@@ -1,0 +1,47 @@
+### Template Inclusions to Ignore Below ###
+
+# Compiled Sources #
+####################
+*.com
+*.class
+*.dll
+*.exe
+*.o
+*.so
+
+# Logs & Databases #
+####################
+*.log
+*.sql
+*.sqlite
+
+# OS Generated Files #
+######################
+.DS_Store
+.DS_Store?
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+
+# Python Specific Files #
+#########################
+*.pyc
+*.pyo
+
+# Automatic File Backups #
+##########################
+*.bak
+*.swp
+*~
+
+#############################################
+
+### User-Custom Git Ignore Files Below ###
+
+*.idea*
+catkin_ws/.catkin_workspace
+catkin_ws/build/*
+catkin_ws/devel/*
+
+# Exclude images (there will be a LOT of them with large filesizes)
+*.JPG

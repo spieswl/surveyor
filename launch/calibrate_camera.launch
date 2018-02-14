@@ -1,0 +1,10 @@
+<launch>
+
+    <node pkg="surveyor" type="camera_emulator.py" name="camera_emu" />
+
+    <node pkg="camera_calibration" type="cameracalibrator.py" name="camera_calibrator" args="--size 8x6 --square 0.0254">
+        <param name="image" value="/camera_emu/image" />
+        <param name="camera" value="/camera_emu/" />
+    </node>
+
+</launch>

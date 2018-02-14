@@ -6,7 +6,7 @@
 
   <maintainer email="WilliamSpies2018@u.northwestern.edu">wspies</maintainer>
 
-  <license>TBD</license>
+  <license>GPLv3</license>
 
   <!-- url type="website">https://github.com/spieswl/container-manipulator_baxter</url -->
 
@@ -14,7 +14,8 @@
   <depend>rospy</depend>
   <depend>std_msgs</depend>
   <depend>sensor_msgs</depend>
-  <depend>image_publisher</depend>
+  <depend>cv_bridge</depend>
+  <depend>camera_calibration</depend>
   <build_depend>message_generation</build_depend>
   <exec_depend>message_runtime</exec_depend>
   <build_export_depend>message_runtime</build_export_depend>
