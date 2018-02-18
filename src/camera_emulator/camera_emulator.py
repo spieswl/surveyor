@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 
 import rospy
-import rospkg
 
 import cv2
 import cv_bridge
 import glob
+import rospkg
+import sys
 
 from sensor_msgs.msg import (Image, CameraInfo)
 
@@ -16,40 +17,53 @@ class CameraEmulation():
 
     def __init__(self):
 
-        # Publishers and Subscribers:
+        # Publishers & Subscribers:
         self.emulated_feed = rospy.Publisher('camera_emu/image', Image, queue_size = 4)
         self.bridge = cv_bridge.CvBridge()
 
-        # Service Handling
+        # Service handling
         rospy.Service('camera_emu/set_camera_info', SetCameraInfo, self.svc_save_calib_info)
 
-        # Class variables
-        self.package_mgr = rospkg.RosPack()
-        self.current_path = self.package_mgr.get_path('surveyor')
-        self.img_calib_dir = self.current_path + "/data/sequence/calib/"
-        self.img_seq_dir = self.current_path + "/data/sequence/images/"
+        # Functional parameters & variables
+        if not rospy.has_param('~function'):
+            rospy.loginfo("USAGE: camera_emulator.py _function:=<OPTION> _sequence_name:=<FOLDER_NAME>")
+            sys.exit(1)
+        else:
+            self.function = rospy.get_param('~function')
 
-        self.framerate = rospy.Rate(5)                                         # Stick with 5 fps for the moment
+            if not self.function in ['calibration', 'odometry']:
+                rospy.loginfo("FUNCTION: Please specify either \'calibration\' or \'odometry\'")
+                sys.exit(1)
 
-        self.output_width = 640
-        self.output_height = 480
+        if not rospy.has_param('~sequence_name'):
+            rospy.loginfo("USAGE: camera_emulator.py _function:=<OPTION> _sequence_name:=<FOLDER_NAME>")
+            sys.exit(1)
+        else:
+            self.sequence_name = rospy.get_param('~sequence_name')
+
+        self.package_path = rospkg.RosPack().get_path('surveyor')
+        self.sequence_path = self.package_path + "/data/" + self.sequence_name
+
+        self.out_framerate = rospy.Rate(5)                                         # Sticking with 5 fps for the moment
+        self.out_width = 640
+        self.out_height = 480
 
         self.calib_data = CameraInfo()
         self.calib_set = False
 
 
-    def svc_save_calib_info(self, Request):
+    def svc_save_calib_info(self, svc_request):
 
-        # Assign service data to local variable
-        self.calib_data = Request.camera_info
+        self.calib_data = svc_request.camera_info
 
         # Completeness check -- If self.calib_data.K[0] == 0, assuming failure in calibration (or no calibration occurred)
         if self.calib_data.K[0] == 0:
             self.calib_set = False
             return (self.calib_set, "Camera calibration data INVALID.")
+
         else:
             # Use calibration data and save it in a format for use with DSO.
-            calib_file = open(self.current_path + "/data/sequence/camera.txt","w+")
+            calib_file = open(self.sequence_path + "/camera.txt","w+")
 
             calib_file.write("Pinhole" + "\t" +
                              str(self.calib_data.K[0]) + "\t" +
@@ -60,11 +74,12 @@ class CameraEmulation():
             calib_file.write(str(self.calib_data.width) + " " +
                              str(self.calib_data.height) + "\n")
             calib_file.write("crop" + "\n")
-            calib_file.write(str(self.output_width) + " " +
-                             str(self.output_height) + "\n")
+            calib_file.write(str(self.out_width) + " " +
+                             str(self.out_height) + "\n")
 
             calib_file.close()
 
+            # Simple loop kickout for now, may have more sophisticated behavior based on this later
             self.calib_set = True
 
             return (self.calib_set, "Camera calibration data successfully applied.")
@@ -72,14 +87,24 @@ class CameraEmulation():
 
 def main():
 
-    # Node initialization
+    # Initialization
     rospy.init_node('camera_emulator')
-
-    # Class initialization
     emulator = CameraEmulation()
-    rospy.loginfo("Camera emulator initialized. Hit <ENTER> to continue...")
-    raw_input()
 
+    rospy.loginfo("Camera emulator initialized.")
+    # DEBUG
+    rospy.loginfo("Hit <ENTER> to continue...")
+    raw_input()
+    # END DEBUG
+
+    # Command and control functionality
+    if emulator.function == 'calibration':
+        target = emulator.sequence_path + "/calib/*"
+    elif emulator.function == 'odometry':
+        target = emulator.sequence_path + "/images/*"
+
+    # Main execution loop
+    # //////////////////////////////////////////////////////////////////////
     while(True):
 
         # DEBUG
@@ -87,26 +112,29 @@ def main():
         # END DEBUG
 
         # Grab all the images from the specified sequence directory in the ROS package
-        for filename in sorted(glob.glob(emulator.img_calib_dir + "*")):
+        for filename in sorted(glob.glob(target)):
 
-            # Access the images with OpenCV
-            src_image = cv2.imread(filename, 0)
+            # DEBUG
+            print filename
+            # END DEBUG
 
             # Convert the OpenCV image to a ROS image via CV_Bridge
+            src_image = cv2.imread(filename, 0)
             ros_image = emulator.bridge.cv2_to_imgmsg(src_image, encoding = "mono8")
 
-            # Publish the converted image on the topic
+            # Publish the converted image on the designated topic
             try:
                 emulator.emulated_feed.publish(ros_image)
             except emulator.bridge.CvBridgeError as err:
                 rospy.loginfo("ERROR - " + err)
 
             # Wait for the next frame to go out
-            emulator.framerate.sleep()
+            emulator.out_framerate.sleep()
 
         if (emulator.calib_set == True):
             rospy.loginfo("Camera calibration saved to disk - EXITING")
             break
+    # //////////////////////////////////////////////////////////////////////
 
     return
 
