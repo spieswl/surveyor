@@ -65,11 +65,10 @@ class CameraEmulation():
             # Use calibration data and save it in a format for use with DSO.
             calib_file = open(self.sequence_path + "/camera.txt","w+")
 
-            calib_file.write("Pinhole" + "\t" +
-                             str(self.calib_data.K[0]) + "\t" +
-                             str(self.calib_data.K[4]) + "\t" +
-                             str(self.calib_data.K[2]) + "\t" +
-                             str(self.calib_data.K[5]) + "\t" +
+            calib_file.write(str( self.calib_data.K[0]/float(self.calib_data.width) ) + "\t" +
+                             str( self.calib_data.K[4]/float(self.calib_data.height) ) + "\t" +
+                             str( (self.calib_data.K[2] + 0.5)/float(self.calib_data.width) ) + "\t" +
+                             str( (self.calib_data.K[5] + 0.5)/float(self.calib_data.height) ) + "\t" +
                              "0" + "\n")
             calib_file.write(str(self.calib_data.width) + " " +
                              str(self.calib_data.height) + "\n")
