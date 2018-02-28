@@ -1,64 +1,53 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(surveyor)
 
-####################
 
-set(ROS_BUILD_TYPE Release)
-set(EXECUTABLE_OUTPUT_PATH bin)
+##### Flags #####
 set(DSO_PATH $ENV{DSO_PATH})
-message("\n\n---- LOOKING FOR DSO at\n\"${DSO_PATH}\"")
+set(EXECUTABLE_OUTPUT_PATH bin)
+set(SURVEYOR_DSO_WRAPPER src/surveyor_dso/surveyor_dso.cpp)
 
-find_package(catkin REQUIRED COMPONENTS
-    message_generation
-    roscpp
-    roslib
-    rospy
-    std_msgs
-    sensor_msgs
-    cv_bridge
-    camera_calibration
-)
+set(CMAKE_CXX_FLAGS "${SSE_FLAGS} -O2 -g -std=c++0x -march=native -fno-omit-frame-pointer")
 
-# NOTE: Will eventually be removed when Pangolin is no longer needed
-find_package(Pangolin 0.2 REQUIRED)
-message("\n\n---- FOUND Pangolin Headers at\n\"${Pangolin_INCLUDE_DIRS}\"")
-message("---- FOUND Pangolin Libs at\n\"${Pangolin_LIBRARIES}\"")
 
-find_package(OpenCV REQUIRED)
-message("\n\n---- FOUND OpenCV Headers at\n\"${OpenCV_INCLUDE_DIRS}\"")
-message("---- FOUND OpenCV Libs at\n\"${OpenCV_LIBS}\"")
+##### Catkin main components #####
+find_package(catkin REQUIRED 
+    COMPONENTS camera_calibration cv_bridge message_generation roscpp roslib rospy geometry_msgs std_msgs sensor_msgs)
+
+
+##### Required packages #####
+find_package(Boost REQUIRED COMPONENTS system thread)
+include_directories(${Boost_INCLUDE_DIRS})
 
 find_package(Eigen3 REQUIRED)
+include_directories(${EIGEN3_INCLUDE_DIRS})
 
-find_package(Boost COMPONENTS system thread) 
+find_package(OpenCV REQUIRED)
+include_directories(${OpenCV_INCLUDE_DIRS})
+
+find_package(Pangolin REQUIRED)
+include_directories(${Pangolin_INCLUDE_DIRS})
 
 find_library(DSO_LIBRARY dso ${DSO_PATH}/build/lib)
 
-####################
 
-set(SOURCE_FILES src/surveyor_dso/surveyor_dso.cpp)
+##### Optional packages #####
+# NONE AT PRESENT
 
-add_executable(surveyor_dso src/surveyor_dso/surveyor_dso.cpp ${SOURCE_FILES})
 
-generate_messages(
-    DEPENDENCIES
-    std_msgs
-    sensor_msgs
-    geometry_msgs
-)
-
-catkin_package(
-    INCLUDE_DIRS include
-    LIBRARIES ${DSO_LIBRARY} ${Pangolin_LIBRARIES} ${OpenCV_LIBS} ${Boost_LIBRARIES}
-    CATKIN_DEPENDS message_generation roscpp roslib rospy std_msgs sensor_msgs cv_bridge camera_calibration
-    DEPENDS Eigen3 OpenCV Pangolin
-)
-
+##### Supplemental includes #####
 include_directories(
-    ${PROJECT_SOURCE_DIR}/src
+    include
+    ${catkin_INCLUDE_DIRS}
     ${DSO_PATH}/src
     ${DSO_PATH}/thirdparty/Sophus
-    ${OpenCV_INCLUDE_DIRS}
-    ${Pangolin_INCLUDE_DIRS}
-    ${EIGEN3_INCLUDE_DIR}
 )
+
+
+##### Package build info export #####
+catkin_package()
+
+
+##### Build directives #####
+add_executable(surveyor_dso src/surveyor_dso/surveyor_dso.cpp ${SURVEYOR_DSO_WRAPPER})
+target_link_libraries(surveyor_dso ${DSO_LIBRARY} ${Pangolin_LIBRARIES} ${OpenCV_LIBRARIES} ${Boost_LIBRARIES} ${catkin_LIBRARIES})

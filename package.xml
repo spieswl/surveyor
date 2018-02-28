@@ -1,25 +1,27 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>surveyor</name>
-  <version>0.0.0</version>
-  <description>The surveyor package</description>
+    <name>surveyor</name>
+    <version>0.0.0</version>
+    <description>The surveyor package</description>
 
-  <maintainer email="WilliamSpies2018@u.northwestern.edu">wspies</maintainer>
+    <maintainer email="WilliamSpies2018@u.northwestern.edu">wspies</maintainer>
 
-  <license>GPLv3</license>
+    <license>GPLv3</license>
 
-  <!-- url type="website">https://github.com/spieswl/container-manipulator_baxter</url -->
+    <!-- url type="website">https://github.com/spieswl/container-manipulator_baxter</url -->
 
-  <buildtool_depend>catkin</buildtool_depend>
-  <depend>roscpp</depend>
-  <depend>rospy</depend>
-  <depend>std_msgs</depend>
-  <depend>sensor_msgs</depend>
-  <depend>cv_bridge</depend>
-  <depend>camera_calibration</depend>
-  <build_depend>message_generation</build_depend>
-  <exec_depend>message_runtime</exec_depend>
-  <build_export_depend>message_runtime</build_export_depend>
+    <buildtool_depend>catkin</buildtool_depend>
+    <depend>roscpp</depend>
+    <depend>roslib</depend>
+    <depend>rospy</depend>
+    <depend>geometry_msgs</depend>
+    <depend>std_msgs</depend>
+    <depend>sensor_msgs</depend>
+    <depend>cv_bridge</depend>
+    <depend>camera_calibration</depend>
+    <build_depend>message_generation</build_depend>
+    <exec_depend>message_runtime</exec_depend>
+    <build_export_depend>message_runtime</build_export_depend>
 
-  <export></export>
+    <export></export>
 </package>

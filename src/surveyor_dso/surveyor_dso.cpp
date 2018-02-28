@@ -4,6 +4,12 @@
 #include <stdio.h>
 #include <unistd.h>
 
+#include "util/settings.h"
+#include "util/Undistort.h"
+#include "FullSystem/FullSystem.h"
+#include "IOWrapper/Pangolin/PangolinDSOViewer.h"
+#include "IOWrapper/OutputWrapper/SampleOutputWrapper.h"
+
 #include <ros/ros.h>
 #include <ros/package.h>
 #include <sensor_msgs/image_encodings.h>
@@ -12,10 +18,6 @@
 #include <geometry_msgs/PoseStamped.h>
 #include "cv_bridge/cv_bridge.h"
 
-#include "util/settings.h"
-#include "util/Undistort.h"
-#include "FullSystem/FullSystem.h"
-#include "IOWrapper/OutputWrapper/SampleOutputWrapper.h"
 
 using namespace dso;
 
@@ -28,14 +30,14 @@ int frameID = 0;
 
 void videoCallback(const sensor_msgs::ImageConstPtr inputImage)
 {
-    cv_bridge::CvImagePtr cv_ptr = cv_bridge::toCvCopy(inputImage, sensor_msgs::image_encodings::MONO8)
+    cv_bridge::CvImagePtr cv_ptr = cv_bridge::toCvCopy(inputImage, sensor_msgs::image_encodings::MONO8);
 
     assert(cv_ptr->image.type() == CV_8U);
     assert(cv_ptr->image.channels() == 1);
 
     if(setting_fullResetRequested)
     {
-        std::vector<IOWrap::Output3DWrapper*> wrap = fullSystem->outputWrapper;
+        std::vector<IOWrap::Output3DWrapper*> wraps = fullSystem->outputWrapper;
         delete fullSystem;
 
         for(IOWrap::Output3DWrapper* ow : wraps)
@@ -67,7 +69,7 @@ int main(int argc, char** argv)
     ros::NodeHandle nh;
     std::string param_name, data_dir, calibFile = "", gammaFile = "", vignetteFile = "";
 
-    ros::init(argc, argv, "surveyor_dso")
+    ros::init(argc, argv, "surveyor_dso");
 
     // Hardcoded settings for "Surveyor" purposes, most are defaults from DSO's settings.cpp file
     setting_debugout_runquiet = false;
@@ -103,7 +105,7 @@ int main(int argc, char** argv)
     }
 
     // Undistort images based on established photometric calibration information
-    undistorter = Undistort::getUndistorterForFile(calibFile, gammaFile, vignetteFile)
+    undistorter = Undistort::getUndistorterForFile(calibFile, gammaFile, vignetteFile);
     setGlobalCalib((int)undistorter->getSize()[0], (int)undistorter->getSize()[1], undistorter->getK().cast<float>());
 
     // TODO: New OutputWrapper functionality will go here
