@@ -57,6 +57,8 @@ Calibration images are unnecessary if geometric calibration information is alrea
 
 2. `rosrun camera_calibration cameracalibrator.py --size 8x6 --square 0.254 image:=/camera_emu/image camera:=/camera_emu`
 
+3. `rosrun surveyor surveyor_dso source:=/camera_emu/image`
+
 
 ### 4. References
 

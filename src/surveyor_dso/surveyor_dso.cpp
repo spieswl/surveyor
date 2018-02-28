@@ -66,10 +66,10 @@ void videoCallback(const sensor_msgs::ImageConstPtr inputImage)
 
 int main(int argc, char** argv)
 {
-    ros::NodeHandle nh;
-    std::string param_name, data_dir, calibFile = "", gammaFile = "", vignetteFile = "";
-
     ros::init(argc, argv, "surveyor_dso");
+
+    ros::NodeHandle nh;
+    std::string param_name, data_dir, sequence_name, calibFile = "", gammaFile = "", vignetteFile = "";
 
     // Hardcoded settings for "Surveyor" purposes, most are defaults from DSO's settings.cpp file
     setting_debugout_runquiet = false;
@@ -82,16 +82,18 @@ int main(int argc, char** argv)
     setting_minFrames = 5;
     setting_minOptIterations = 1;
 
-    setting_photometricCalibration = 2;
+    setting_photometricCalibration = 0;             // Default in DSO is 2
     setting_useExposure = false;                    // Default in DSO is true
     setting_affineOptModeA = 0;                     // Default in DSO is 1e12
     setting_affineOptModeB = 0;                     // Default in DSO is 1e8
 
-    // Check the ROS parameter server for "sequence name", which will define the location
+    // Check the ROS parameter server for "sequence", which will define the location of the data to check
     // for the calibration, gamma, and vignette files.
-    if (nh.searchParam("sequence", param_name))
+    if(nh.searchParam("/camera_emulator/sequence", param_name))
     {
-        data_dir = ros::package::getPath("surveyor") + "/data/" + param_name;
+        nh.getParam(param_name, sequence_name);
+
+        data_dir = ros::package::getPath("surveyor") + "/data/" + sequence_name;
 
         calibFile = data_dir + "/camera.txt";
         gammaFile = data_dir + "/pcalib.txt";
@@ -99,7 +101,7 @@ int main(int argc, char** argv)
     }
     else
     {
-        ROS_INFO("SURVEYOR-DSO : No parameter named 'sequence_name'!");
+        ROS_INFO("SURVEYOR-DSO : No parameter named 'sequence'!");
 
         return 5;
     }
@@ -109,6 +111,10 @@ int main(int argc, char** argv)
     setGlobalCalib((int)undistorter->getSize()[0], (int)undistorter->getSize()[1], undistorter->getK().cast<float>());
 
     // TODO: New OutputWrapper functionality will go here
+    // -->>
+
+    fullSystem = new FullSystem();
+    fullSystem->linearizeOperation=false;
 
     // DEBUG - Enable visualization for now, eventually replaced with OutputWrapper functionality to store pose, etc.
     if(true)
@@ -116,9 +122,6 @@ int main(int argc, char** argv)
         fullSystem->outputWrapper.push_back(new IOWrap::PangolinDSOViewer((int)undistorter->getSize()[0], (int)undistorter->getSize()[1]));
     }
     // END DEBUG
-
-    fullSystem = new FullSystem();
-    fullSystem->linearizeOperation=false;
 
     if(undistorter->photometricUndist != 0)
     {
