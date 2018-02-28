@@ -26,20 +26,23 @@ class CameraEmulation():
 
         # Functional parameters & variables
         if not rospy.has_param('~function'):
-            rospy.loginfo("USAGE: camera_emulator.py _function:=<OPTION> _sequence_name:=<FOLDER_NAME>")
+            rospy.loginfo("No 'function' parameter specified!")
+            rospy.loginfo("USAGE: camera_emulator.py _function:=<OPTION> _sequence:=<FOLDER_NAME>")
             sys.exit(1)
         else:
             self.function = rospy.get_param('~function')
 
             if not self.function in ['calibration', 'odometry']:
+                rospy.loginfo("Invalid 'function' parameter specified!")
                 rospy.loginfo("FUNCTION: Please specify either \'calibration\' or \'odometry\'")
                 sys.exit(1)
 
-        if not rospy.has_param('~sequence_name'):
-            rospy.loginfo("USAGE: camera_emulator.py _function:=<OPTION> _sequence_name:=<FOLDER_NAME>")
+        if not rospy.has_param('~sequence'):
+            rospy.loginfo("No 'sequence' parameter specified!")
+            rospy.loginfo("USAGE: camera_emulator.py _function:=<OPTION> _sequence:=<FOLDER_NAME>")
             sys.exit(1)
         else:
-            self.sequence_name = rospy.get_param('~sequence_name')
+            self.sequence_name = rospy.get_param('~sequence')
 
         self.package_path = rospkg.RosPack().get_path('surveyor')
         self.sequence_path = self.package_path + "/data/" + self.sequence_name

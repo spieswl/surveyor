@@ -24,10 +24,12 @@ PLACEHOLDER
 
 ### 3. Using a Prerecorded 2D Image Dataset
 
-Surveyor can use prerecorded 2D images to serve as the input to the odometry-modelling (OM) pipeline. Additional components are needed in order to pass the image data and supply the necessary calibration information to the pipeline:
+Surveyor can use prerecorded 2D images to serve as the input to the odometry-modelling (OM) pipeline. Additional components are needed in order to pass the image data and supply the necessary calibration information to the pipeline
 
 1. `camera_emulator`
-2. `camera_calibration` : Part of the `image_pipeline` metapackage (see __Dependencies__)
+2. `camera_calibration`     : Part of the `image_pipeline` metapackage (see __1. Dependencies__)
+3. `surveyor_dso`           : Custom ROS wrapper to interface with DSO
+4. `TBD`
 
 In addition to the 2D images, files containing the camera geometric calibration, gamma calibration, and a vignette sample should accompany the image set. If using a prerecorded 2D image set, take care to arrange the information in the following fashion:
 
@@ -44,14 +46,16 @@ In addition to the 2D images, files containing the camera geometric calibration,
 
 In addition to the *images* folder, *camera.txt*, *gamma.txt*, and *vignette.png* are **REQUIRED** for Surveyor to run. The OM pipeline is prevented from working unless those files are present. 
 
-Calibration images are unnecessary if geometric calibration information is already available to Surveyor. *Camera.txt* can be calculated by running `camera_emulator` and `camera_calibration` together; the emulator will detect that `camera_calibration` is writing new CameraInfo to the emulated camera node and write the parameters (with proper formatting) to disk.
+Calibration images are unnecessary if geometric calibration information is already available to Surveyor. *Camera.txt* can be calculated by running `camera_emulator` and `camera_calibration` together; when the user interacts with the calibration suite, the emulator will detect that `camera_calibration` is writing new CameraInfo to the emulated camera node and write the parameters (with proper formatting) to disk.
 
 
-#### Launch Commands
+#### Relevant Launch Commands (WIP)
 
-1. `rosrun surveyor camera_emulator.py` 
+1. `rosrun surveyor camera_emulator.py _function:=<XXXX> _sequence:=<YYYY>`
+    * `_function` : Replace <XXXX> with 'calibration' or 'odometry', noting that the dataset subfolder selected will be different.
+    * `_sequence` : Replace <YYYY> with the folder name of the dataset you wish Surveyor to operate with.
 
-2. `rosrun camera_calibration cameracalibrator.py --size 8x6 --square 0.254 image:/camera_emu/image camera:=/camera_emu`
+2. `rosrun camera_calibration cameracalibrator.py --size 8x6 --square 0.254 image:=/camera_emu/image camera:=/camera_emu`
 
 
 ### 4. References
