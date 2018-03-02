@@ -8,7 +8,7 @@
 #include "util/Undistort.h"
 #include "FullSystem/FullSystem.h"
 #include "IOWrapper/Pangolin/PangolinDSOViewer.h"
-#include "IOWrapper/OutputWrapper/SampleOutputWrapper.h"
+#include "surveyor_dso/PoseOutput.h"
 
 #include <ros/ros.h>
 #include <ros/package.h>
@@ -66,12 +66,12 @@ void videoCallback(const sensor_msgs::ImageConstPtr inputImage)
 
 int main(int argc, char** argv)
 {
-    ros::init(argc, argv, "surveyor_dso");
-
-    ros::NodeHandle nh;
     std::string param_name, data_dir, sequence_name, calibFile = "", gammaFile = "", vignetteFile = "";
 
-    // Hardcoded settings for "Surveyor" purposes, most are defaults from DSO's settings.cpp file
+    ros::init(argc, argv, "surveyor_dso");
+    ros::NodeHandle nh;
+
+    // Hardcoded settings for "Surveyor" purposes, values are defaults from DSO's settings.cpp file unless otherwise noted.
     setting_debugout_runquiet = false;
     setting_desiredImmatureDensity = 1500;
     setting_desiredPointDensity = 2000;
@@ -110,18 +110,15 @@ int main(int argc, char** argv)
     undistorter = Undistort::getUndistorterForFile(calibFile, gammaFile, vignetteFile);
     setGlobalCalib((int)undistorter->getSize()[0], (int)undistorter->getSize()[1], undistorter->getK().cast<float>());
 
-    // TODO: New OutputWrapper functionality will go here
-    // -->>
-
     fullSystem = new FullSystem();
-    fullSystem->linearizeOperation=false;
+    fullSystem->linearizeOperation = false;
 
+    // Output components (hooked into DSO)
     // DEBUG - Enable visualization for now, eventually replaced with OutputWrapper functionality to store pose, etc.
-    if(true)
-    {
-        fullSystem->outputWrapper.push_back(new IOWrap::PangolinDSOViewer((int)undistorter->getSize()[0], (int)undistorter->getSize()[1]));
-    }
+    fullSystem->outputWrapper.push_back(new IOWrap::PangolinDSOViewer((int)undistorter->getSize()[0], (int)undistorter->getSize()[1]));
     // END DEBUG
+    fullSystem->outputWrapper.push_back(new IOWrap::PoseOutputWrapper());
+
 
     if(undistorter->photometricUndist != 0)
     {
