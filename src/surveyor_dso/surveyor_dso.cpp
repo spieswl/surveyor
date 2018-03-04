@@ -115,9 +115,12 @@ int main(int argc, char** argv)
 
     // Output components (hooked into DSO)
     // DEBUG - Enable visualization for now, eventually replaced with OutputWrapper functionality to store pose, etc.
-    fullSystem->outputWrapper.push_back(new IOWrap::PangolinDSOViewer((int)undistorter->getSize()[0], (int)undistorter->getSize()[1]));
+    if (false)
+    {
+        fullSystem->outputWrapper.push_back(new IOWrap::PangolinDSOViewer((int)undistorter->getSize()[0], (int)undistorter->getSize()[1]));
+    }
     // END DEBUG
-    fullSystem->outputWrapper.push_back(new IOWrap::PoseOutputWrapper());
+    fullSystem->outputWrapper.push_back(new IOWrap::PoseOutputWrapper(data_dir));
 
 
     if(undistorter->photometricUndist != 0)

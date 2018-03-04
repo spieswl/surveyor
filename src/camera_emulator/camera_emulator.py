@@ -133,12 +133,14 @@ def main():
             # Wait for the next frame to go out
             emulator.out_framerate.sleep()
 
-        if (emulator.calib_set == True):
-            rospy.loginfo("Camera calibration saved to disk - EXITING")
-            break
-    # //////////////////////////////////////////////////////////////////////
+            if (emulator.calib_set == True):
+                rospy.loginfo("Camera calibration saved to disk - EXITING")
+                break
 
-    return
+        rospy.loginfo("DEBUG - Image sequence complete. Exiting...")
+        
+        return
+    # //////////////////////////////////////////////////////////////////////
 
 
 if __name__ == '__main__':

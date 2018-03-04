@@ -24,12 +24,12 @@ PLACEHOLDER
 
 ### 3. Using a Prerecorded 2D Image Dataset
 
-Surveyor can use prerecorded 2D images to serve as the input to the odometry-modelling (OM) pipeline. Additional components are needed in order to pass the image data and supply the necessary calibration information to the pipeline
+Surveyor can use prerecorded 2D images to serve as the input to the odometry-modeling (OM) pipeline. Additional components are needed in order to pass the image data and supply the necessary calibration information to the pipeline
 
 1. `camera_emulator`
 2. `camera_calibration`     : Part of the `image_pipeline` metapackage (see __1. Dependencies__)
 3. `surveyor_dso`           : Custom ROS wrapper to interface with DSO
-4. `TBD`
+4. `surveyor_remode`        : Custom ROS wrapper to interface with REMODE
 
 In addition to the 2D images, files containing the camera geometric calibration, gamma calibration, and a vignette sample should accompany the image set. If using a prerecorded 2D image set, take care to arrange the information in the following fashion:
 
@@ -46,7 +46,7 @@ In addition to the 2D images, files containing the camera geometric calibration,
 
 In addition to the *images* folder, *camera.txt*, *gamma.txt*, and *vignette.png* are **REQUIRED** for Surveyor to run. The OM pipeline is prevented from working unless those files are present. 
 
-Calibration images are unnecessary if geometric calibration information is already available to Surveyor. *Camera.txt* can be calculated by running `camera_emulator` and `camera_calibration` together; when the user interacts with the calibration suite, the emulator will detect that `camera_calibration` is writing new CameraInfo to the emulated camera node and write the parameters (with proper formatting) to disk.
+Calibration images are unnecessary if geometric calibration information is already available to Surveyor. *Camera.txt* can be calculated by running `camera_emulator` and `camera_calibration` together; when the user interacts with the calibration software, the emulator will detect that `camera_calibration` is writing new CameraInfo to the emulated camera node and write the parameters (with proper formatting for the rest of the OM pipeline) to disk.
 
 
 #### Relevant Launch Commands (WIP)
@@ -58,6 +58,11 @@ Calibration images are unnecessary if geometric calibration information is alrea
 2. `rosrun camera_calibration cameracalibrator.py --size 8x6 --square 0.254 image:=/camera_emu/image camera:=/camera_emu`
 
 3. `rosrun surveyor surveyor_dso source:=/camera_emu/image`
+
+
+#### (DEVELOPMENT REFERENCE) Don't forget...
+
+...to enter `export DSO_PATH=~/Repositories/libraries/dso` before running `catkin_make`.
 
 
 ### 4. References
