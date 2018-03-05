@@ -25,7 +25,7 @@ using namespace dso;
 // Global vars & constructs
 FullSystem* fullSystem = 0;
 Undistort* undistorter = 0;
-int frameID = 0;
+int frameID = 1;
 
 
 void videoCallback(const sensor_msgs::ImageConstPtr inputImage)
@@ -64,9 +64,10 @@ void videoCallback(const sensor_msgs::ImageConstPtr inputImage)
     delete undistImg;
 }
 
+
 int main(int argc, char** argv)
 {
-    std::string param_name, data_dir, sequence_name, calibFile = "", gammaFile = "", vignetteFile = "";
+    std::string param_name, data_dir, sequence_name, calibFile, gammaFile, vignetteFile;
 
     ros::init(argc, argv, "surveyor_dso");
     ros::NodeHandle nh;
@@ -101,7 +102,7 @@ int main(int argc, char** argv)
     }
     else
     {
-        ROS_INFO("SURVEYOR-DSO : No parameter named 'sequence'!");
+        ROS_ERROR("SURVEYOR-DSO : No parameter named 'sequence'!");
 
         return 5;
     }
