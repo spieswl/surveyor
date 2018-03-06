@@ -27,7 +27,7 @@ namespace IOWrap
             this->sequence_path_ = data_dir;
             this->pose_file_ = this->sequence_path_ + "/pose.txt";
 
-            ROS_INFO_STREAM("SURVEYOR-DSO : Created PoseOutput I/O wrapper.");
+            ROS_INFO_STREAM("SURVEYOR-DSO : Created ROS interface node to DSO.");
             ROS_INFO_STREAM("SURVEYOR-DSO : Data directory path referenced to " << this->sequence_path_);
 
             this->pose_recorder_.open(this->pose_file_, std::ios::out);
@@ -37,7 +37,7 @@ namespace IOWrap
         {
             this->pose_recorder_.close();
 
-            printf("SURVEYOR-DSO : Terminated PoseOutput I/O wrapper.\n");
+            printf("SURVEYOR-DSO : Terminated ROS/DSO interface node.\n");
         }
 
         virtual void publishCamPose(FrameShell* frame, CalibHessian* HCalib) override

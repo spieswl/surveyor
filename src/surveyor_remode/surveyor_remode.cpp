@@ -23,12 +23,15 @@ void surveyor::RemodeNode::RemodeNode(ros::NodeHandle &nh, std::string data_dir)
     this->num_msgs_ = 0;
     this->state_ = surveyor::RemodeState::TAKE_REFERENCE_FRAME;
 
-    // should this actually go here? check this out later... -WLS
-    this->pose_reader_.open(this->pose_file_, std::ios::in);
-
     this->ref_compl_perc_ = 10.0;                   // REMODE Depthmap Node default values
     this->max_dist_from_ref_ = 0.5;                 // Reevaluate these after pipeline is fully operational
     this->publish_conv_every_n_ = 10;               // (Originals found in "rpg_open_remode/src/depthmap_node.cpp")
+
+    ROS_INFO_STREAM("SURVEYOR-REMODE : Created ROS interface node to REMODE.");
+    ROS_INFO_STREAM("SURVEYOR-REMODE : Data directory path referenced to " << this->sequence_path_);
+
+    // should this actually go here? check this out later... -WLS
+    this->pose_reader_.open(this->pose_file_, std::ios::in);
 }
 
 
