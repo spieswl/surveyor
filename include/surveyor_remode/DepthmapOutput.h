@@ -1,8 +1,9 @@
 #ifndef __DEPTHMAPOUTPUT_H
 #define __DEPTHMAPOUTPUT_H
 
-#include <iostream>
+#include <future>
 #include <fstream>
+#include <iostream>
 #include <sstream>
 
 #include <ros/ros.h>
@@ -30,8 +31,8 @@ namespace surveyor
     public:
         RemodeNode(ros::NodeHandle &nh, std::string data_dir);
 
-        void init();
-        void videoCallback(const sensor_msgs::ImageConstPtr inputImage);
+        void initNode();
+        void videoCallback(const sensor_msgs::ImageConstPtr &inputImage);
 
     private:
         ros::NodeHandle &nh_;
@@ -59,7 +60,7 @@ namespace surveyor
 
         void denoiseAndPublishResults();
         void publishConvergenceMap();
-    }
+    };
 
 }
 #endif

@@ -12,6 +12,7 @@ set(SURVEYOR_REMODE_SRC src/surveyor_remode/surveyor_remode.cpp)
 
 set(CMAKE_CXX_FLAGS "${SSE_FLAGS} -O2 -g -std=c++0x -march=native -fno-omit-frame-pointer")
 
+
 ##### Catkin main components #####
 find_package(catkin REQUIRED 
     COMPONENTS camera_calibration cv_bridge image_transport message_generation roscpp roslib rospy geometry_msgs pcl_ros std_msgs sensor_msgs vikit_ros)
@@ -31,9 +32,18 @@ find_package(Pangolin REQUIRED)
 include_directories(${Pangolin_INCLUDE_DIRS})
 
 find_package(CUDA REQUIRED)
+include_directories(${CUDA_INCLUDE_DIRS})
 set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-O3 -use_fast_math)
+set(CUDA_PROPAGATE_HOST_FLAGS OFF)
+
+find_package(Pangolin REQUIRED)
+include_directories(${Pangolin_INCLUDE_DIRS})
 
 find_library(DSO_LIBRARY dso ${DSO_PATH}/build/lib)
+
+find_library(REMODE_LIBRARY rpg_open_remode)
+find_library(REMODE_CUDA_LIBRARY rpg_open_remode_cuda)
+
 
 ##### Optional packages #####
 # NONE AT PRESENT
@@ -46,17 +56,22 @@ include_directories(
     ${DSO_PATH}/src
     ${DSO_PATH}/thirdparty/Sophus
     ${REMODE_PATH}/src
-    ${REMODE_PATH}/include
+    ${REMODE_PATH}/include/
 )
 
 
 ##### Package build info export #####
-catkin_package()
+catkin_package(
+    DEPENDS OpenCV Eigen Boost
+    CATKIN_DEPENDS camera_calibration cv_bridge image_transport roscpp roslib rospy geometry_msgs pcl_ros std_msgs sensor_msgs vikit_ros
+    INCLUDE_DIRS include
+    LIBRARIES ${DSO_LIBRARY} ${REMODE_LIBRARY} ${REMODE_CUDA_LIBRARY}
+)
 
 
 ##### Build directives #####
-add_executable(surveyor_dso src/surveyor_dso/surveyor_dso.cpp ${SURVEYOR_DSO_WRAPPER})
+add_executable(surveyor_dso src/surveyor_dso/surveyor_dso.cpp ${SURVEYOR_DSO_SRC})
 target_link_libraries(surveyor_dso ${DSO_LIBRARY} ${Pangolin_LIBRARIES} ${OpenCV_LIBRARIES} ${Boost_LIBRARIES} ${catkin_LIBRARIES})
 
-add_executable(surveyor_remode src/surveyor_remode/surveyor_remode.cpp ${SURVEYOR_REMODE_SRC})
-target_link_libraries(surveyor_remode ${OpenCV_LIBRARIES} ${Boost_LIBRARIES} ${catkin_LIBRARIES} rpg_open_remode rpg_open_remode_cuda)
+add_executable(surveyor_remode src/surveyor_remode/surveyor_remode.cpp ${SURVEYOR_REMODE_SRC} ${REMODE_PATH}/src/publisher.cpp)
+target_link_libraries(surveyor_remode ${REMODE_LIBRARY} ${REMODE_CUDA_LIBRARY} ${OpenCV_LIBRARIES} ${Boost_LIBRARIES} ${catkin_LIBRARIES} )

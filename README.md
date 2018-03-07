@@ -59,10 +59,7 @@ Calibration images are unnecessary if geometric calibration information is alrea
 
 3. `rosrun surveyor surveyor_dso source:=/camera_emu/image`
 
-
-#### (DEVELOPMENT REFERENCE) Don't forget...
-
-...to enter `export DSO_PATH=~/Repositories/libraries/dso` before running `catkin_make`.
+4. `rosrun surveyor surveyor_remode source:=/camera_emu/image`
 
 
 ### 4. References
