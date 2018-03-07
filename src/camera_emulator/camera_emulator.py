@@ -66,6 +66,7 @@ class CameraEmulation():
 
         else:
             # Use calibration data and save it in a format for use with DSO.
+            # Camera intrinsic parameters
             calib_file = open(self.sequence_path + "/camera.txt","w+")
 
             calib_file.write(str( self.calib_data.K[0]/float(self.calib_data.width) ) + "\t" +
@@ -73,13 +74,23 @@ class CameraEmulation():
                              str( (self.calib_data.K[2] + 0.5)/float(self.calib_data.width) ) + "\t" +
                              str( (self.calib_data.K[5] + 0.5)/float(self.calib_data.height) ) + "\t" +
                              "0" + "\n")
-            calib_file.write(str(self.calib_data.width) + " " +
-                             str(self.calib_data.height) + "\n")
+            calib_file.write(str( self.calib_data.width ) + " " +
+                             str( self.calib_data.height ) + "\n")
             calib_file.write("crop" + "\n")
-            calib_file.write(str(self.out_width) + " " +
-                             str(self.out_height) + "\n")
+            calib_file.write(str( self.out_width ) + " " +
+                             str( self.out_height ) + "\n")
 
             calib_file.close()
+
+            # Camera distortion parameters
+            distort_file = open(self.sequence_path + "/distort.txt","w+")
+
+            distort_file.write(str( self.calib_data.D[0] ) + "\t" +
+                               str( self.calib_data.D[1] ) + "\t" +
+                               str( self.calib_data.D[2] ) + "\t" +
+                               str( self.calib_data.D[3] ) + "\n")
+
+            distort_file.close()
 
             # Simple loop kickout for now, may have more sophisticated behavior based on this later
             self.calib_set = True
@@ -92,6 +103,8 @@ def main():
     # Initialization
     rospy.init_node('camera_emulator')
     emulator = CameraEmulation()
+
+    main_iteration = 0;
 
     rospy.loginfo("Camera emulator initialized.")
     # DEBUG
@@ -108,38 +121,42 @@ def main():
     # Main execution loop
     # //////////////////////////////////////////////////////////////////////
     while(True):
-
-        # DEBUG
-        rospy.loginfo("DEBUG - Starting at head of image loop.")
-        # END DEBUG
-
-        # Grab all the images from the specified sequence directory in the ROS package
-        for filename in sorted(glob.glob(target)):
-
+        if (main_iteration == 0):
             # DEBUG
-            print filename
+            rospy.loginfo("DEBUG - Starting at head of image loop.")
             # END DEBUG
 
-            # Convert the OpenCV image to a ROS image via CV_Bridge
-            src_image = cv2.imread(filename, 0)
-            ros_image = emulator.bridge.cv2_to_imgmsg(src_image, encoding = "mono8")
+            # Grab all the images from the specified sequence directory in the ROS package
+            for filename in sorted(glob.glob(target)):
 
-            # Publish the converted image on the designated topic
-            try:
-                emulator.emulated_feed.publish(ros_image)
-            except emulator.bridge.CvBridgeError as err:
-                rospy.loginfo("ERROR - " + err)
+                # DEBUG
+                print filename
+                # END DEBUG
 
-            # Wait for the next frame to go out
-            emulator.out_framerate.sleep()
+                # Convert the OpenCV image to a ROS image via CV_Bridge
+                src_image = cv2.imread(filename, 0)
+                ros_image = emulator.bridge.cv2_to_imgmsg(src_image, encoding = "mono8")
 
-            if (emulator.calib_set == True):
-                rospy.loginfo("Camera calibration saved to disk - EXITING")
-                break
+                # Publish the converted image on the designated topic
+                try:
+                    emulator.emulated_feed.publish(ros_image)
+                except emulator.bridge.CvBridgeError as err:
+                    rospy.loginfo("ERROR - " + err)
 
-        rospy.loginfo("DEBUG - Image sequence complete. Exiting...")
-        
-        return
+                # Wait for the next frame to go out
+                emulator.out_framerate.sleep()
+
+            main_iteration += 1
+
+        if (emulator.calib_set == True):
+            rospy.loginfo("Camera calibration saved to disk - EXITING")
+            break
+
+    # DEBUG
+    rospy.loginfo("DEBUG - Image sequence complete. Exiting...")
+    # END DEBUG
+
+    return
     # //////////////////////////////////////////////////////////////////////
 
 

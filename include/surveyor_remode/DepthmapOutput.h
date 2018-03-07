@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <sstream>
 
 #include <ros/ros.h>
 #include <sensor_msgs/Image.h>
@@ -40,12 +41,12 @@ namespace surveyor
         std::string distort_file_;
         std::string pose_file_;
 
+        int frame_ID_;
         int num_msgs_;
         RemodeState state_;
 
         std::ifstream calib_reader_;
         std::ifstream distort_reader_;
-        std::ifstream pose_reader_;
 
         std::shared_ptr<rmd::Depthmap> depthmap_;
         std::unique_ptr<rmd::Publisher> publisher_;
@@ -53,12 +54,12 @@ namespace surveyor
         float max_dist_from_ref_;
         int publish_conv_every_n_;
 
+        float min_z_;
+        float max_z_;
+
         void denoiseAndPublishResults();
         void publishConvergenceMap();
     }
 
 }
-
-void initDepthmapNode();
-
 #endif
