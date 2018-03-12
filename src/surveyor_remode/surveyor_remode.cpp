@@ -66,14 +66,13 @@ surveyor::RemodeNode::RemodeNode(ros::NodeHandle &nh, std::string data_dir) : nh
     this->num_msgs_ = 0;
     this->state_ = surveyor::RemodeState::TAKE_REFERENCE_FRAME;
 
-    this->ref_compl_perc_ = 0.05;                   // REMODE Depthmap Node default values (was 10.0)
-    this->max_dist_from_ref_ = 0.5;                 // Reevaluate these after pipeline is fully operational
+    this->ref_compl_perc_ = 5.0;                   // REMODE Depthmap Node default values
+    this->max_dist_from_ref_ = 5.0;                 // Reevaluate these after pipeline is fully operational
     this->publish_conv_every_n_ = 10;               // (Originals found in "rpg_open_remode/src/depthmap_node.cpp")
 
-    // NOTE: This looks hacky but I drew it straight from SVO's "exportToDense" member function in the Visualizer class. ¯\_(ツ)_/¯
-    this->min_z_ = 0.0;         //(float) (std::numeric_limits<double>::max());
-    this->max_z_ = 10000.0;     //(float) (std::numeric_limits<double>::min());
-    // NOTE: Also, that is not a mistake (as far as I know): max() goes to min_z_ and vice versa.
+    // NOTE: "min_z" and "max_z" are based off of feature depths as determined from SVO, this might be a problem.
+    this->min_z_ = 0.0;
+    this->max_z_ = 1000.0;
 
     ROS_INFO_STREAM("SURVEYOR-REMODE : Created ROS interface node to REMODE.");
     ROS_INFO_STREAM("SURVEYOR-REMODE : Data directory path referenced to " << this->sequence_path_);

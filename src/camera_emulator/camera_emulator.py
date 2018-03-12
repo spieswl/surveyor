@@ -47,7 +47,7 @@ class CameraEmulation():
         self.package_path = rospkg.RosPack().get_path('surveyor')
         self.sequence_path = self.package_path + "/data/" + self.sequence_name
 
-        self.out_framerate = rospy.Rate(1)                                         # Sticking with 1 fps for the moment
+        self.out_framerate = rospy.Rate(10)                                        # 10 Hz
         self.out_width = 640
         self.out_height = 480
 
@@ -161,4 +161,7 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except rospy.ROSInterruptException:
+        pass
