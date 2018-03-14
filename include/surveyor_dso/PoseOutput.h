@@ -24,6 +24,7 @@ namespace IOWrap
     public:
         inline PoseOutputWrapper(std::string data_dir)
         {
+            // File path variables
             this->sequence_path_ = data_dir;
             this->pose_file_ = this->sequence_path_ + "/pose.txt";
 
@@ -42,13 +43,12 @@ namespace IOWrap
 
         virtual void publishCamPose(FrameShell* frame, CalibHessian* HCalib) override
         {
-            // DEBUG
             ROS_INFO_STREAM("SURVEYOR-DSO : Current Frame " << frame->incoming_id);
             ROS_INFO_STREAM("SURVEYOR-DSO : (Time " << frame->timestamp << ", ID " << frame->id <<").");
-            ROS_INFO_STREAM(frame->camToWorld.matrix3x4());
-            // END DEBUG
 
+            // Pose output to file
             this->pose_recorder_ << frame->id << "\t\t";
+            this->pose_recorder_ << std::fixed << std::setprecision(7);
             for (int k = 0; k < 3; k++)
             {
                 this->pose_recorder_ << frame->camToWorld.matrix3x4().col(0)[k] << "\t";
@@ -56,7 +56,8 @@ namespace IOWrap
                 this->pose_recorder_ << frame->camToWorld.matrix3x4().col(2)[k] << "\t";
                 this->pose_recorder_ << frame->camToWorld.matrix3x4().col(3)[k] << "\t";
             }
-            this->pose_recorder_ << "0.0\t0.0\t0.0\t1.0" << "\n";
+            this->pose_recorder_ << std::setprecision(2);
+            this->pose_recorder_ << float(0) << "\t" << float(0) << "\t" << float(0) << "\t" << float(1) << "\n";
         }
 
     private:

@@ -47,7 +47,8 @@ class CameraEmulation():
         self.package_path = rospkg.RosPack().get_path('surveyor')
         self.sequence_path = self.package_path + "/data/" + self.sequence_name
 
-        self.out_framerate = rospy.Rate(10)                                        # 10 Hz
+        # Other variables
+        self.pub_rate = 10 # (Hz)
         self.out_width = 640
         self.out_height = 480
 
@@ -62,7 +63,7 @@ class CameraEmulation():
         # Completeness check -- If self.calib_data.K[0] == 0, assuming failure in calibration (or no calibration occurred)
         if self.calib_data.K[0] == 0:
             self.calib_set = False
-            return (self.calib_set, "Camera calibration data INVALID.")
+            return (self.calib_set, "S-CAMEMU : Camera calibration data INVALID.")
 
         else:
             # Use calibration data and save it in a format for use with DSO.
@@ -95,7 +96,7 @@ class CameraEmulation():
             # Simple loop kickout for now, may have more sophisticated behavior based on this later
             self.calib_set = True
 
-            return (self.calib_set, "Camera calibration data successfully applied.")
+            return (self.calib_set, "S-CAMEMU : Camera calibration data successfully applied.")
 
 
 def main():
@@ -104,11 +105,11 @@ def main():
     rospy.init_node('camera_emulator')
     emulator = CameraEmulation()
 
-    main_iteration = 0;
+    xmit_complete = False;
 
-    rospy.loginfo("Camera emulator initialized.")
+    rospy.loginfo("S-CAMEMU : Camera emulator initialized.")
     # DEBUG
-    rospy.loginfo("Hit <ENTER> to continue...")
+    rospy.loginfo("S-CAMEMU : Hit <ENTER> to continue...")
     raw_input()
     # END DEBUG
 
@@ -120,18 +121,15 @@ def main():
 
     # Main execution loop
     # //////////////////////////////////////////////////////////////////////
-    while(True):
-        if (main_iteration == 0):
-            # DEBUG
-            rospy.loginfo("DEBUG - Starting at head of image loop.")
-            # END DEBUG
+    while not rospy.is_shutdown():
+
+        while xmit_complete == False:
+            rospy.loginfo("S-CAMEMU : Node set to " + emulator.function + " mode.")
+            rospy.loginfo("S-CAMEMU : Starting at head of image loop.")
+            rospy.loginfo("S-CAMEMU : Publishing at a rate of " + str(emulator.pub_rate) + " Hz.")
 
             # Grab all the images from the specified sequence directory in the ROS package
             for filename in sorted(glob.glob(target)):
-
-                # DEBUG
-                print filename
-                # END DEBUG
 
                 # Convert the OpenCV image to a ROS image via CV_Bridge
                 src_image = cv2.imread(filename, 0)
@@ -144,17 +142,21 @@ def main():
                     rospy.loginfo("ERROR - " + err)
 
                 # Wait for the next frame to go out
-                emulator.out_framerate.sleep()
+                rospy.Rate(emulator.pub_rate).sleep()
 
-            main_iteration += 1
+            xmit_complete = True
 
-        if (emulator.calib_set == True):
-            rospy.loginfo("Camera calibration saved to disk - EXITING")
+        # Wrap-up behaviors for the node
+        if emulator.function == 'odometry':
+            rospy.loginfo("S-CAMEMU : Publishing sequence complete. EXITING...")
             break
-
-    # DEBUG
-    rospy.loginfo("DEBUG - Image sequence complete. Exiting...")
-    # END DEBUG
+        
+        if emulator.function == 'calibration':
+            rospy.loginfo("S-CAMEMU : Waiting for camera calibration information from calibration node...")
+            while emulator.calib_set != True:
+                pass
+            rospy.loginfo("S-CAMEMU : Camera calibration saved to 'camera.txt'. EXITING...")
+            break
 
     return
     # //////////////////////////////////////////////////////////////////////
