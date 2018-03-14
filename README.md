@@ -1,4 +1,4 @@
-## surveyor - v0.1.0 (WORK IN PROGRESS)
+## surveyor - v0.0.1
 
 Surveyor is an independent software project implementing state-of-the-art visual odometry and 3D reconstruction algorithms. This package can be used as an offline computation system, or it can be paired with specific hardware to create a live 3D modeling system that works entirely from 2D images. 
 
