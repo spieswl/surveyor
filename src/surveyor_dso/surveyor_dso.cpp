@@ -116,7 +116,7 @@ int main(int argc, char** argv)
 
     // Output components (hooked into DSO)
     // DEBUG - Enable visualization for now, eventually replaced with OutputWrapper functionality to store pose, etc.
-    if (true)
+    if (false)
     {
         fullSystem->outputWrapper.push_back(new IOWrap::PangolinDSOViewer((int)undistorter->getSize()[0], (int)undistorter->getSize()[1]));
     }

@@ -85,9 +85,10 @@ In addition to the *images* folder, *camera.txt*, *pcalib.txt*, and *vignette.pn
 
 #### Relevant Launch Commands (WIP)
 
-1. `rosrun surveyor camera_emulator.py _function:=<XXXX> _sequence:=<YYYY>`
+1. `rosrun surveyor camera_emulator.py _function:=<XXXX> _sequence:=<YYYY> _video:=<TRUE,FALSE>`
     * `_function` : Replace <XXXX> with 'calibration' or 'odometry', noting that the subfolder selected to pull images from will be different.
     * `_sequence` : Replace <YYYY> with the folder name of the dataset you wish Surveyor to use.
+    * `_video` : If you want surveyor to run on a video file in the data directory, set this to 'true'.
 
 2. `rosrun camera_calibration cameracalibrator.py --size 8x6 --square 0.254 image:=/camera_emu/image camera:=/camera_emu`
 

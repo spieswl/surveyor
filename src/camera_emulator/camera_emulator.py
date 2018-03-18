@@ -170,7 +170,11 @@ def main():
             while video_capture.isOpened():
                 
                 # Convert the OpenCV video-captured image to a ROS image via CV_Bridge
-                vid_image = video_capture.read()[1]
+                frame_buffer, vid_image = video_capture.read()
+
+                if frame_buffer == False:
+                    break                   # Exit frame capture loop if 
+
                 src_image = cv2.cvtColor(vid_image, cv2.COLOR_BGR2GRAY)
                 ros_image = emulator.bridge.cv2_to_imgmsg(src_image, encoding = "mono8")
 

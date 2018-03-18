@@ -201,7 +201,7 @@ void surveyor::RemodeNode::videoCallback(const sensor_msgs::ImageConstPtr &input
 
 void surveyor::RemodeNode::denoiseAndPublishResults()
 {
-    this->depthmap_->downloadDenoisedDepthmap(0.3f, 500);               // Important values
+    this->depthmap_->downloadDenoisedDepthmap(0.5f, 500);               // Important values
     this->depthmap_->downloadConvergenceMap();
 
     std::async(std::launch::async, &rmd::Publisher::publishDepthmapAndPointCloud, *publisher_);
