@@ -33,7 +33,7 @@ surveyor::RemodeNode::RemodeNode(ros::NodeHandle &nh, std::string data_dir) : nh
 
     // NOTE: "min_z" and "max_z" are based off of feature depths as determined from SVO, this might be a problem.
     this->min_z_ = 0.0;                             // Typ. 0
-    this->max_z_ = 1000000.0;                       // Typ. 1,000,000
+    this->max_z_ = 100000.0;                        // Typ. 100,000
 
     ROS_INFO_STREAM("SURVEYOR-REMODE : Created ROS interface node to REMODE.");
     ROS_INFO_STREAM("SURVEYOR-REMODE : Data directory path referenced to " << this->sequence_path_);
@@ -201,7 +201,7 @@ void surveyor::RemodeNode::videoCallback(const sensor_msgs::ImageConstPtr &input
 
 void surveyor::RemodeNode::denoiseAndPublishResults()
 {
-    this->depthmap_->downloadDenoisedDepthmap(0.5f, 200);
+    this->depthmap_->downloadDenoisedDepthmap(0.3f, 500);               // Important values
     this->depthmap_->downloadConvergenceMap();
 
     std::async(std::launch::async, &rmd::Publisher::publishDepthmapAndPointCloud, *publisher_);

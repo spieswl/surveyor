@@ -25,9 +25,10 @@ class CameraEmulation():
         rospy.Service('camera_emu/set_camera_info', SetCameraInfo, self.svc_save_calib_info)
 
         # Functional parameters & variables
+        # "Function"
         if not rospy.has_param('~function'):
             rospy.loginfo("No 'function' parameter specified!")
-            rospy.loginfo("USAGE: camera_emulator.py _function:=<OPTION> _sequence:=<FOLDER_NAME>")
+            rospy.loginfo("USAGE: camera_emulator.py _function:=<OPTION> _sequence:=<FOLDER_NAME> _video:=<YES,NO>")
             sys.exit(1)
         else:
             self.function = rospy.get_param('~function')
@@ -37,20 +38,29 @@ class CameraEmulation():
                 rospy.loginfo("FUNCTION: Please specify either \'calibration\' or \'odometry\'")
                 sys.exit(1)
 
+        # "Sequence"
         if not rospy.has_param('~sequence'):
             rospy.loginfo("No 'sequence' parameter specified!")
-            rospy.loginfo("USAGE: camera_emulator.py _function:=<OPTION> _sequence:=<FOLDER_NAME>")
+            rospy.loginfo("USAGE: camera_emulator.py _function:=<OPTION> _sequence:=<FOLDER_NAME> _video:=<YES,NO>")
             sys.exit(1)
         else:
             self.sequence_name = rospy.get_param('~sequence')
+
+        # "Video"
+        if not rospy.has_param('~video'):
+            rospy.loginfo("No 'video' parameter specified!")
+            rospy.loginfo("USAGE: camera_emulator.py _function:=<OPTION> _sequence:=<FOLDER_NAME> _video:=<TRUE,FALSE>")
+            sys.exit(1)
+        else:
+            self.is_video = rospy.get_param('~video')
 
         self.package_path = rospkg.RosPack().get_path('surveyor')
         self.sequence_path = self.package_path + "/data/" + self.sequence_name
 
         # Other variables
         self.pub_rate = 10 # (Hz)
-        self.out_width = 640
-        self.out_height = 480
+        self.out_width = 640                    # Hardcoded for now
+        self.out_height = 480                   # Hardcoded for now
 
         self.calib_data = CameraInfo()
         self.calib_set = False
@@ -63,7 +73,7 @@ class CameraEmulation():
         # Completeness check -- If self.calib_data.K[0] == 0, assuming failure in calibration (or no calibration occurred)
         if self.calib_data.K[0] == 0:
             self.calib_set = False
-            return (self.calib_set, "S-CAMEMU : Camera calibration data INVALID.")
+            return (self.calib_set, "SURVEYOR-CAMEMU : Camera calibration data INVALID.")
 
         else:
             # Use calibration data and save it in a format for use with DSO.
@@ -96,7 +106,7 @@ class CameraEmulation():
             # Simple loop kickout for now, may have more sophisticated behavior based on this later
             self.calib_set = True
 
-            return (self.calib_set, "S-CAMEMU : Camera calibration data successfully applied.")
+            return (self.calib_set, "SURVEYOR-CAMEMU : Camera calibration data successfully applied.")
 
 
 def main():
@@ -107,32 +117,61 @@ def main():
 
     xmit_complete = False;
 
-    rospy.loginfo("S-CAMEMU : Camera emulator initialized.")
+    rospy.loginfo("SURVEYOR-CAMEMU : Camera emulator initialized.")
     # DEBUG
-    rospy.loginfo("S-CAMEMU : Hit <ENTER> to continue...")
+    rospy.loginfo("SURVEYOR-CAMEMU : Hit <ENTER> to continue...")
     raw_input()
     # END DEBUG
 
-    # Command and control functionality
+    # Behavior switch
     if emulator.function == 'calibration':
         target = emulator.sequence_path + "/calib/*"
     elif emulator.function == 'odometry':
         target = emulator.sequence_path + "/images/*"
 
+    # Video feed switch
+    if emulator.is_video == True:
+        target = emulator.sequence_path + "/video.avi"
+        rospy.loginfo("SURVEYOR-CAMEMU : Set to parse video file.")
+
     # Main execution loop
     # //////////////////////////////////////////////////////////////////////
     while not rospy.is_shutdown():
 
-        while xmit_complete == False:
-            rospy.loginfo("S-CAMEMU : Node set to " + emulator.function + " mode.")
-            rospy.loginfo("S-CAMEMU : Starting at head of image loop.")
-            rospy.loginfo("S-CAMEMU : Publishing at a rate of " + str(emulator.pub_rate) + " Hz.")
+        # Static image publishing sequence
+        if emulator.is_video == False:
+            while xmit_complete == False:
+                rospy.loginfo("SURVEYOR-CAMEMU : Node set to " + emulator.function + " mode.")
+                rospy.loginfo("SURVEYOR-CAMEMU : Starting at head of image loop.")
+                rospy.loginfo("SURVEYOR-CAMEMU : Publishing at a rate of " + str(emulator.pub_rate) + " Hz.")
 
-            # Grab all the images from the specified sequence directory in the ROS package
-            for filename in sorted(glob.glob(target)):
+                # Grab all the images from the specified sequence directory in the ROS package
+                for filename in sorted(glob.glob(target)):
 
-                # Convert the OpenCV image to a ROS image via CV_Bridge
-                src_image = cv2.imread(filename, 0)
+                    # Convert the OpenCV image to a ROS image via CV_Bridge
+                    src_image = cv2.imread(filename, 0)
+                    ros_image = emulator.bridge.cv2_to_imgmsg(src_image, encoding = "mono8")
+
+                    # Publish the converted image on the designated topic
+                    try:
+                        emulator.emulated_feed.publish(ros_image)
+                    except emulator.bridge.CvBridgeError as err:
+                        rospy.loginfo("ERROR - " + err)
+
+                    # Wait for the next frame to go out
+                    rospy.Rate(emulator.pub_rate).sleep()
+
+                xmit_complete = True
+
+        # Video publishing sequence
+        elif emulator.is_video == True:
+            video_capture = cv2.VideoCapture(target)
+
+            while video_capture.isOpened():
+                
+                # Convert the OpenCV video-captured image to a ROS image via CV_Bridge
+                vid_image = video_capture.read()[1]
+                src_image = cv2.cvtColor(vid_image, cv2.COLOR_BGR2GRAY)
                 ros_image = emulator.bridge.cv2_to_imgmsg(src_image, encoding = "mono8")
 
                 # Publish the converted image on the designated topic
@@ -144,18 +183,16 @@ def main():
                 # Wait for the next frame to go out
                 rospy.Rate(emulator.pub_rate).sleep()
 
-            xmit_complete = True
-
         # Wrap-up behaviors for the node
         if emulator.function == 'odometry':
-            rospy.loginfo("S-CAMEMU : Publishing sequence complete. EXITING...")
+            rospy.loginfo("SURVEYOR-CAMEMU : Publishing sequence complete. EXITING...")
             break
         
         if emulator.function == 'calibration':
-            rospy.loginfo("S-CAMEMU : Waiting for camera calibration information from calibration node...")
+            rospy.loginfo("SURVEYOR-CAMEMU : Waiting for camera calibration information from calibration node...")
             while emulator.calib_set != True:
                 pass
-            rospy.loginfo("S-CAMEMU : Camera calibration saved to 'camera.txt'. EXITING...")
+            rospy.loginfo("SURVEYOR-CAMEMU : Camera calibration saved to 'camera.txt'. EXITING...")
             break
 
     return
