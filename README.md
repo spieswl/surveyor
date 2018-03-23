@@ -11,6 +11,8 @@ The final output of this system is a dense point cloud usable in architectural, 
 *Note that `surveyor` is a Work-In-Progress and functionality may change as part of future updates. Express fitness for any particular task is also disclaimed.*
 
 
+
+
 ## <LINE>
 
 ### Contents
@@ -172,11 +174,11 @@ For example, running `rosrun camera_calibration cameracalibrator.py --size 8x6 -
 
 ### 5. Results
 
-<img src="https://github.com/spieswl/choreographer/raw/master/images/dso_results1.png" width=480/>
+<img src="https://raw.githubusercontent.com/spieswl/surveyor/master/images/dso_results1.png" width=480/>
 
-<img src="https://github.com/spieswl/choreographer/raw/master/images/dso_results2.png" width=480/>
+<img src="https://raw.githubusercontent.com/spieswl/surveyor/master/images/dso_results2.png" width=480/>
 
-<img src="https://github.com/spieswl/choreographer/raw/master/images/srmd_results1.png" width=480/>
+<img src="https://raw.githubusercontent.com/spieswl/surveyor/master/images/srmd_results1.png" width=480/>
 
 
 ### 6. References
