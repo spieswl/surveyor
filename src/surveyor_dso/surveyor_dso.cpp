@@ -69,23 +69,25 @@ void videoCallback(const sensor_msgs::ImageConstPtr inputImage)
 
 int main(int argc, char** argv)
 {
-    std::string source_param;
-    std::string param_name, data_dir, sequence_name;
-    std::string calibFile, gammaFile, vignetteFile;
-
-    bool visualizer_enabled;
-
     // ROS node initialization
     ros::init(argc, argv, "surveyor_dso");
     ros::NodeHandle nh;
+    ros::NodeHandle priv_param("~");
 
     // ROS Parameters
-    nh.param<std::string>("source", source_param, "/camera_emu/image");
-    
-    nh.param("visualizer", visualizer_enabled, false);
+    // "Source"
+    std::string source_param;
+    priv_param.param<std::string>("source", source_param, "/camera_emu/image");
+
+    // "Visualizer"
+    bool visualizer_enabled;
+    priv_param.param("visualizer", visualizer_enabled, false);
 
     // Check the ROS parameter server for "sequence", which will define the location of the data to check
     // for the calibration, gamma, and vignette files.
+    std::string param_name, data_dir, sequence_name;
+    std::string calibFile, gammaFile, vignetteFile;
+
     if(nh.searchParam("/camera_emulator/sequence", param_name))
     {
         nh.getParam(param_name, sequence_name);
@@ -128,7 +130,7 @@ int main(int argc, char** argv)
 
     // Output components (hooked into DSO)
     // DEBUG - Enable visualization for now, eventually replaced with OutputWrapper functionality to store pose, etc.
-    if (false)
+    if (visualizer_enabled)
     {
         fullSystem->outputWrapper.push_back(new IOWrap::PangolinDSOViewer((int)undistorter->getSize()[0], (int)undistorter->getSize()[1]));
     }

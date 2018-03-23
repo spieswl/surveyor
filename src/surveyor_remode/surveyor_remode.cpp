@@ -31,7 +31,8 @@ surveyor::RemodeNode::RemodeNode(ros::NodeHandle &nh, std::string data_dir) : nh
     this->max_dist_from_ref_ = 0.5;                 // Unknown
     this->publish_conv_every_n_ = 10;               // Unknown, doesn't seem to make difference, typ. 10
 
-    // NOTE: "min_z" and "max_z" are based off of feature depths as determined from SVO, this might be a problem.
+    // NOTE: "min_z" and "max_z" are based off of feature depths as determined from SVO.
+    // This might be a problem without tailored numbers from DSO's pose calculation sequence.
     this->min_z_ = 0.0;                             // Typ. 0
     this->max_z_ = 100000.0;                        // Typ. 100,000
 
@@ -61,7 +62,7 @@ void surveyor::RemodeNode::initNode()
     this->calib_reader_.close();
     // ----------------------------------------
 
-    // Scaling to undo the normalization needed for DSO
+    // Scaling to undo the normalization in the camera.txt file
     cam_fx = cam_fx * cam_width;
     cam_fy = cam_fy * cam_height;
     cam_cx = cam_cx * cam_width;
@@ -123,23 +124,14 @@ void surveyor::RemodeNode::videoCallback(const sensor_msgs::ImageConstPtr &input
         {
             valid_frame = true;
 
-            // Row 1
-            input_string >> r[0];
-            input_string >> r[1];
-            input_string >> r[2];
-            input_string >> t[0];
-
-            // Row 2
-            input_string >> r[3];
-            input_string >> r[4];
-            input_string >> r[5];
-            input_string >> t[1];
-
-            // Row 3
-            input_string >> r[6];
-            input_string >> r[7];
-            input_string >> r[8];
-            input_string >> t[2];
+            // Handles rows 1, 2, and 3 from pose file
+            for(int k = 0; k < 3; k++)
+            {
+                input_string >> r[3*k];
+                input_string >> r[3*k+1];
+                input_string >> r[3*k+2];
+                input_string >> t[k];
+            }
 
             // DEBUG
             std::cout << "DEBUG - POSE ID : " << pose_ID << std::endl;
@@ -223,10 +215,15 @@ int main(int argc, char** argv)
         return 5;
     }
 
+    std::string source_param;
     std::string param_name, data_dir, sequence_name;
 
     ros::init(argc, argv, "surveyor_remode");
     ros::NodeHandle nh;
+
+    // ROS Parameters
+    // "Source"
+    nh.param<std::string>("source", source_param, "/camera_emu/image");
 
     // Check the ROS parameter server for "sequence", which will define the location of the data to check
     // for the calibration and pose files.
@@ -245,7 +242,7 @@ int main(int argc, char** argv)
     surveyor::RemodeNode srv_rmd_node(nh, data_dir);
     srv_rmd_node.initNode();
 
-    ros::Subscriber imgSub = nh.subscribe("source", 1, &surveyor::RemodeNode::videoCallback, &srv_rmd_node);
+    ros::Subscriber imgSub = nh.subscribe(source_param, 1, &surveyor::RemodeNode::videoCallback, &srv_rmd_node);
 
     ros::Rate loop_rate(30);
     while(ros::ok())

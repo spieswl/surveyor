@@ -54,11 +54,15 @@ class CameraEmulation():
         else:
             self.is_video = rospy.get_param('~video')
 
+        # "Video"
+        if not rospy.has_param('~rate'):
+            rospy.set_param('~rate', 10)
+
         self.package_path = rospkg.RosPack().get_path('surveyor')
         self.sequence_path = self.package_path + "/data/" + self.sequence_name
 
         # Other variables
-        self.pub_rate = 10 # (Hz)
+        self.pub_rate = rospy.get_param('~rate')
         self.out_width = 640                    # Hardcoded for now
         self.out_height = 480                   # Hardcoded for now
 
