@@ -19,6 +19,8 @@
 #include "cv_bridge/cv_bridge.h"
 
 
+
+
 using namespace dso;
 
 
@@ -67,26 +69,20 @@ void videoCallback(const sensor_msgs::ImageConstPtr inputImage)
 
 int main(int argc, char** argv)
 {
-    std::string param_name, data_dir, sequence_name, calibFile, gammaFile, vignetteFile;
+    std::string source_param;
+    std::string param_name, data_dir, sequence_name;
+    std::string calibFile, gammaFile, vignetteFile;
 
+    bool visualizer_enabled;
+
+    // ROS node initialization
     ros::init(argc, argv, "surveyor_dso");
     ros::NodeHandle nh;
 
-    // Hardcoded settings for "Surveyor" purposes, values are defaults from DSO's settings.cpp file unless otherwise noted.
-    setting_debugout_runquiet = false;
-    setting_desiredImmatureDensity = 1500;
-    setting_desiredPointDensity = 2000;
-    setting_kfGlobalWeight = 1.3;                   // Default in DSO is 1.0
-    setting_logStuff = false;                       // Default in DSO is true
-    setting_maxFrames = 7;
-    setting_maxOptIterations = 6;
-    setting_minFrames = 5;
-    setting_minOptIterations = 1;
-
-    setting_photometricCalibration = 0;             // Default in DSO is 2
-    setting_useExposure = false;                    // Default in DSO is true
-    setting_affineOptModeA = 0;                     // Default in DSO is 1e12
-    setting_affineOptModeB = 0;                     // Default in DSO is 1e8
+    // ROS Parameters
+    nh.param<std::string>("source", source_param, "/camera_emu/image");
+    
+    nh.param("visualizer", visualizer_enabled, false);
 
     // Check the ROS parameter server for "sequence", which will define the location of the data to check
     // for the calibration, gamma, and vignette files.
@@ -106,6 +102,22 @@ int main(int argc, char** argv)
 
         return 5;
     }
+
+    // Hardcoded settings for "Surveyor" purposes, values are defaults from DSO's settings.cpp file unless otherwise noted.
+    setting_debugout_runquiet = false;
+    setting_desiredImmatureDensity = 1500;
+    setting_desiredPointDensity = 2000;
+    setting_kfGlobalWeight = 1.3;                   // Default in DSO is 1.0
+    setting_logStuff = false;                       // Default in DSO is true
+    setting_maxFrames = 7;
+    setting_maxOptIterations = 6;
+    setting_minFrames = 5;
+    setting_minOptIterations = 1;
+
+    setting_photometricCalibration = 0;             // Default in DSO is 2
+    setting_useExposure = false;                    // Default in DSO is true
+    setting_affineOptModeA = 0;                     // Default in DSO is 1e12
+    setting_affineOptModeB = 0;                     // Default in DSO is 1e8
 
     // Undistort images based on established photometric calibration information
     undistorter = Undistort::getUndistorterForFile(calibFile, gammaFile, vignetteFile);
@@ -130,7 +142,7 @@ int main(int argc, char** argv)
     }
 
     // Core ROS infrastructure, connection to '/camera' or '/camera_emu' via the "source" parameter
-    ros::Subscriber imgSub = nh.subscribe("source", 1, &videoCallback);
+    ros::Subscriber imgSub = nh.subscribe(source_param, 1, &videoCallback);
 
     ros::spin();
 
