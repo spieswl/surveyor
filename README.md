@@ -11,18 +11,16 @@ The final output of this system is a dense point cloud usable in architectural, 
 *Note that `surveyor` is a Work-In-Progress and functionality may change as part of future updates. Express fitness for any particular task is also disclaimed.*
 
 
-
-
 ## <LINE>
 
 ### Contents
-1. [Dependencies](#dependencies)
-2. [Installation](#installation)
-3. [Interfaces and Commands](#interfaces-and-commands)
-4. [Using Surveyor](#using-surveyor)
-5. [Results](#results)
-6. [References](#references)
-7. [License](#license)
+1. [Dependencies](#1-dependencies)
+2. [Installation](#2-installation)
+3. [Interfaces and Commands](#3-interfaces-and-commands)
+4. [Using Surveyor](#4-using-surveyor)
+5. [Results](#5-results)
+6. [References](#6-references)
+7. [License](#7-license)
 
 
 ### 1. Dependencies
@@ -61,9 +59,9 @@ The `camera_emulator` node reads data (images, calibration, frame-by-frame poses
 
 - **function**: This parameter only has two options at present, `calibration` or `odometry`, which control the folder that images will be published from. No default value is assigned. NOTE that this parameter's setting is superseded if the **video** switch is set to `true`.
 
-- **sequence**: This parameter allows the user to pick which dataset is to be drawn from. This parameter should be set to the name of a folder in the `./data/` directory inside the `surveyor` package. This value will be reused in the `surveyor-dso` and `surveyor-remode` nodes. No default value is assigned. More information on the use of this parameter is in the [Using Surveyor](#using-surveyor) section.
+- **sequence**: This parameter allows the user to pick which dataset is to be drawn from. This parameter should be set to the name of a folder in the `./data/` directory inside the `surveyor` package. This value will be reused in the `surveyor-dso` and `surveyor-remode` nodes. No default value is assigned. More information on the use of this parameter is in the [Using Surveyor](#4-using-surveyor) section.
 
-- **video**: This is a binary switch that allows the user to designate whether or not to process a video file (in lieu of a sequential set of images). As a result of OpenCV's limited video support, only **.AVI** files are supported. NOTE that setting this parameter to `true` will override the sub-directory behavior from the **function** parameter. The default value of this parameter is `false`. More information on the use of this parameter is in the [Using Surveyor](#using-surveyor) section.
+- **video**: This is a binary switch that allows the user to designate whether or not to process a video file (in lieu of a sequential set of images). As a result of OpenCV's limited video support, only **.AVI** files are supported. NOTE that setting this parameter to `true` will override the sub-directory behavior from the **function** parameter. The default value of this parameter is `false`. More information on the use of this parameter is in the [Using Surveyor](#4-using-surveyor) section.
 
 - **rate**: This parameter is a numerical value tied to the publishing frequency of the node. The default value of this parameter is **10**, as in 10 published images per second.
 
@@ -107,7 +105,7 @@ The `surveyor-remode` node is a ROS wrapper, written in C++, to Regularized Mono
 - This node subscribes to, by default, `/camera_emu/image` ([sensor_msgs/Image.msg](http://docs.ros.org/api/sensor_msgs/html/msg/Image.html)).
 - This node does not publish on any topics.
 
-- **NOTE**: Indirectly, `rpg_open_remode` will publish point clouds to a topic named `/remode/pointcloud` ([sensor_msgs/PointCloud](http://docs.ros.org/api/sensor_msgs/html/msg/PointCloud.html)).
+**NOTE**: Indirectly, `rpg_open_remode` will publish point clouds to a topic named `/remode/pointcloud` ([sensor_msgs/PointCloud](http://docs.ros.org/api/sensor_msgs/html/msg/PointCloud.html)).
 
 ##### Services
 
@@ -133,7 +131,7 @@ In addition to the 2D images, files containing the camera's geometric calibratio
         └── vignette.png        # Vignette sample
 ```
 
-In addition to the *images* folder, *camera.txt* and *distort.txt* are **REQUIRED** for Surveyor to run. The OM pipeline is unable to develop point clouds unless those files are present. More information on the tasks necessary to generate those files can be found in [Calibration Procedures](#calibration-procedure).
+In addition to the *images* folder, *camera.txt* and *distort.txt* are **REQUIRED** for Surveyor to run. The OM pipeline is unable to develop point clouds unless those files are present. More information on the tasks necessary to generate those files can be found in [Calibration Procedures](#calibration-procedures).
 
 *pcalib.txt* and *vignette.png* are used, if available, by Direct Sparse Odometry. While not required, they improve the accuracy of calculations performed by DSO to recover the camera pose for an arbitrary frame in the relayed image sequence. Other code, made available [here](https://github.com/tum-vision/mono_dataset_code) thanks to the Technical University of Munich, can help you determine those parameters.
 
@@ -174,11 +172,11 @@ For example, running `rosrun camera_calibration cameracalibrator.py --size 8x6 -
 
 ### 5. Results
 
-<img src="https://raw.githubusercontent.com/spieswl/surveyor/master/images/dso_results1.png" width=480/>
+<p align="center"><img src="https://raw.githubusercontent.com/spieswl/surveyor/master/images/dso_results1.png" width=600/></p>
 
-<img src="https://raw.githubusercontent.com/spieswl/surveyor/master/images/dso_results2.png" width=480/>
+<p align="center"><img src="https://raw.githubusercontent.com/spieswl/surveyor/master/images/dso_results2.png" width=600/></p>
 
-<img src="https://raw.githubusercontent.com/spieswl/surveyor/master/images/srmd_results1.png" width=480/>
+<p align="center"><img src="https://raw.githubusercontent.com/spieswl/surveyor/master/images/srmd_results1.png" width=600/></p>
 
 
 ### 6. References
