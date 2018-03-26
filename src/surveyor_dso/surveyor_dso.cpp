@@ -1,15 +1,17 @@
+// Core C++ Includes
 #include <locale.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
 
+// DSO Includes
 #include "util/settings.h"
 #include "util/Undistort.h"
 #include "FullSystem/FullSystem.h"
 #include "IOWrapper/Pangolin/PangolinDSOViewer.h"
-#include "surveyor_dso/PoseOutput.h"
 
+// ROS Includes
 #include <ros/ros.h>
 #include <ros/package.h>
 #include <sensor_msgs/image_encodings.h>
@@ -18,15 +20,12 @@
 #include <geometry_msgs/PoseStamped.h>
 #include "cv_bridge/cv_bridge.h"
 
-
-
-
-using namespace dso;
+#include "surveyor_dso/PoseOutput.h"
 
 
 // Global vars & constructs
-FullSystem* fullSystem = 0;
-Undistort* undistorter = 0;
+dso::FullSystem* fullSystem = 0;
+dso::Undistort* undistorter = 0;
 int frameID = 1;
 
 
@@ -37,28 +36,28 @@ void videoCallback(const sensor_msgs::ImageConstPtr inputImage)
     assert(cv_ptr->image.type() == CV_8U);
     assert(cv_ptr->image.channels() == 1);
 
-    if(setting_fullResetRequested)
+    if(dso::setting_fullResetRequested)
     {
-        std::vector<IOWrap::Output3DWrapper*> wraps = fullSystem->outputWrapper;
+        std::vector<dso::IOWrap::Output3DWrapper*> wraps = fullSystem->outputWrapper;
         delete fullSystem;
 
-        for(IOWrap::Output3DWrapper* ow : wraps)
+        for(dso::IOWrap::Output3DWrapper* ow : wraps)
         {
             ow->reset();
         }
-        fullSystem = new FullSystem();
+        fullSystem = new dso::FullSystem();
         fullSystem->linearizeOperation = false;
         fullSystem->outputWrapper = wraps;
         if(undistorter->photometricUndist != 0)
         {
             fullSystem->setGammaFunction(undistorter->photometricUndist->getG());
         }
-        setting_fullResetRequested = false;
+        dso::setting_fullResetRequested = false;
     }
 
-    MinimalImageB minImg((int)cv_ptr->image.cols, (int)cv_ptr->image.rows, (unsigned char*)cv_ptr->image.data);
+    dso::MinimalImageB minImg((int)cv_ptr->image.cols, (int)cv_ptr->image.rows, (unsigned char*)cv_ptr->image.data);
 
-    ImageAndExposure* undistImg = undistorter->undistort<unsigned char>(&minImg, 1, 0, 1.0f);
+    dso::ImageAndExposure* undistImg = undistorter->undistort<unsigned char>(&minImg, 1, 0, 1.0f);
 
     fullSystem->addActiveFrame(undistImg, frameID);
     frameID++;
@@ -106,36 +105,36 @@ int main(int argc, char** argv)
     }
 
     // Hardcoded settings for "Surveyor" purposes, values are defaults from DSO's settings.cpp file unless otherwise noted.
-    setting_debugout_runquiet = false;
-    setting_desiredImmatureDensity = 1500;
-    setting_desiredPointDensity = 2000;
-    setting_kfGlobalWeight = 1.3;                   // Default in DSO is 1.0
-    setting_logStuff = false;                       // Default in DSO is true
-    setting_maxFrames = 7;
-    setting_maxOptIterations = 6;
-    setting_minFrames = 5;
-    setting_minOptIterations = 1;
+    dso::setting_debugout_runquiet = false;
+    dso::setting_desiredImmatureDensity = 1500;
+    dso::setting_desiredPointDensity = 2000;
+    dso::setting_kfGlobalWeight = 1.3;                   // Default in DSO is 1.0
+    dso::setting_logStuff = false;                       // Default in DSO is true
+    dso::setting_maxFrames = 7;
+    dso::setting_maxOptIterations = 6;
+    dso::setting_minFrames = 5;
+    dso::setting_minOptIterations = 1;
 
-    setting_photometricCalibration = 0;             // Default in DSO is 2
-    setting_useExposure = false;                    // Default in DSO is true
-    setting_affineOptModeA = 0;                     // Default in DSO is 1e12
-    setting_affineOptModeB = 0;                     // Default in DSO is 1e8
+    dso::setting_photometricCalibration = 0;             // Default in DSO is 2
+    dso::setting_useExposure = false;                    // Default in DSO is true
+    dso::setting_affineOptModeA = 0;                     // Default in DSO is 1e12
+    dso::setting_affineOptModeB = 0;                     // Default in DSO is 1e8
 
     // Undistort images based on established photometric calibration information
-    undistorter = Undistort::getUndistorterForFile(calibFile, gammaFile, vignetteFile);
-    setGlobalCalib((int)undistorter->getSize()[0], (int)undistorter->getSize()[1], undistorter->getK().cast<float>());
+    undistorter = dso::Undistort::getUndistorterForFile(calibFile, gammaFile, vignetteFile);
+    dso::setGlobalCalib((int)undistorter->getSize()[0], (int)undistorter->getSize()[1], undistorter->getK().cast<float>());
 
-    fullSystem = new FullSystem();
+    fullSystem = new dso::FullSystem();
     fullSystem->linearizeOperation = false;
 
     // Output components (hooked into DSO)
     // DEBUG - Enable visualization for now, eventually replaced with OutputWrapper functionality to store pose, etc.
     if (visualizer_enabled)
     {
-        fullSystem->outputWrapper.push_back(new IOWrap::PangolinDSOViewer((int)undistorter->getSize()[0], (int)undistorter->getSize()[1]));
+        fullSystem->outputWrapper.push_back(new dso::IOWrap::PangolinDSOViewer((int)undistorter->getSize()[0], (int)undistorter->getSize()[1]));
     }
     // END DEBUG
-    fullSystem->outputWrapper.push_back(new IOWrap::PoseOutputWrapper(data_dir));
+    fullSystem->outputWrapper.push_back(new PoseOutputWrapper(data_dir));
 
 
     if(undistorter->photometricUndist != 0)
@@ -148,7 +147,7 @@ int main(int argc, char** argv)
 
     ros::spin();
 
-    for(IOWrap::Output3DWrapper* ow : fullSystem->outputWrapper)
+    for(dso::IOWrap::Output3DWrapper* ow : fullSystem->outputWrapper)
     {
         ow->join();
         delete ow;
