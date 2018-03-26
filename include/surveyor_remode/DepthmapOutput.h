@@ -1,16 +1,19 @@
 #ifndef __DEPTHMAPOUTPUT_H
 #define __DEPTHMAPOUTPUT_H
 
+// Core C++ Includes
 #include <future>
 #include <fstream>
 #include <iostream>
 #include <sstream>
 
-#include <ros/ros.h>
-#include <sensor_msgs/Image.h>
-
+// REMODE Includes
 #include <rmd/depthmap.h>
 #include <rmd/publisher.h>
+
+// ROS Includes
+#include <ros/ros.h>
+#include <sensor_msgs/Image.h>
 
 
 namespace surveyor

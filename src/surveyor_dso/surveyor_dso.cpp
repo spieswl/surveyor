@@ -128,14 +128,11 @@ int main(int argc, char** argv)
     fullSystem->linearizeOperation = false;
 
     // Output components (hooked into DSO)
-    // DEBUG - Enable visualization for now, eventually replaced with OutputWrapper functionality to store pose, etc.
     if (visualizer_enabled)
     {
         fullSystem->outputWrapper.push_back(new dso::IOWrap::PangolinDSOViewer((int)undistorter->getSize()[0], (int)undistorter->getSize()[1]));
     }
-    // END DEBUG
-    fullSystem->outputWrapper.push_back(new PoseOutputWrapper(data_dir));
-
+    fullSystem->outputWrapper.push_back(new surveyor::PoseOutputWrapper(data_dir));
 
     if(undistorter->photometricUndist != 0)
     {
@@ -144,7 +141,6 @@ int main(int argc, char** argv)
 
     // Core ROS infrastructure, connection to '/camera' or '/camera_emu' via the "source" parameter
     ros::Subscriber imgSub = nh.subscribe(source_param, 1, &videoCallback);
-
     ros::spin();
 
     for(dso::IOWrap::Output3DWrapper* ow : fullSystem->outputWrapper)

@@ -1,5 +1,10 @@
-#include "surveyor_remode/DepthmapOutput.h"
+// REMODE Includes
+#include <rmd/depthmap.h>
+#include <rmd/publisher.h>
+#include <rmd/check_cuda_device.cuh>
+#include <rmd/se3.cuh>
 
+// ROS Includes
 #include <ros/ros.h>
 #include <ros/package.h>
 #include <sensor_msgs/image_encodings.h>
@@ -7,10 +12,7 @@
 #include <sensor_msgs/CameraInfo.h>
 #include <cv_bridge/cv_bridge.h>
 
-#include <rmd/depthmap.h>
-#include <rmd/publisher.h>
-#include <rmd/check_cuda_device.cuh>
-#include <rmd/se3.cuh>
+#include "surveyor_remode/DepthmapOutput.h"
 
 
 surveyor::RemodeNode::RemodeNode(ros::NodeHandle &nh, std::string data_dir) : nh_(nh)
