@@ -29,6 +29,44 @@ dso::Undistort* undistorter = 0;
 int frameID = 1;
 
 
+surveyor::PoseOutputWrapper::PoseOutputWrapper(std::string data_dir)
+{
+    // File path variables
+    this->sequence_path_ = data_dir;
+    this->pose_file_ = this->sequence_path_ + "/pose.txt";
+
+    ROS_INFO_STREAM("SURVEYOR-DSO : Created ROS interface node to DSO.");
+    ROS_INFO_STREAM("SURVEYOR-DSO : Data directory path referenced to " << this->sequence_path_);
+
+    this->pose_recorder_.open(this->pose_file_, std::ios::out);
+}
+
+surveyor::PoseOutputWrapper::~PoseOutputWrapper()
+{
+    this->pose_recorder_.close();
+
+    printf("SURVEYOR-DSO : Terminated ROS/DSO interface node.\n");
+}
+
+void surveyor::PoseOutputWrapper::publishCamPose(dso::FrameShell* frame, dso::CalibHessian* HCalib)
+{
+    ROS_INFO_STREAM("SURVEYOR-DSO : Current Frame " << frame->incoming_id);
+    ROS_INFO_STREAM("SURVEYOR-DSO : (Time " << frame->timestamp << ", ID " << frame->id <<").");
+
+    // Pose output to file
+    this->pose_recorder_ << frame->id << "\t\t";
+    this->pose_recorder_ << std::fixed << std::setprecision(7);
+    for (int k = 0; k < 3; k++)
+    {
+        this->pose_recorder_ << frame->camToWorld.matrix3x4().col(0)[k] << "\t";
+        this->pose_recorder_ << frame->camToWorld.matrix3x4().col(1)[k] << "\t";
+        this->pose_recorder_ << frame->camToWorld.matrix3x4().col(2)[k] << "\t";
+        this->pose_recorder_ << frame->camToWorld.matrix3x4().col(3)[k] << "\t";
+    }
+    this->pose_recorder_ << std::setprecision(2);
+    this->pose_recorder_ << float(0) << "\t" << float(0) << "\t" << float(0) << "\t" << float(1) << "\n";
+}
+
 void videoCallback(const sensor_msgs::ImageConstPtr inputImage)
 {
     cv_bridge::CvImagePtr cv_ptr = cv_bridge::toCvCopy(inputImage, sensor_msgs::image_encodings::MONO8);
@@ -64,7 +102,6 @@ void videoCallback(const sensor_msgs::ImageConstPtr inputImage)
 
     delete undistImg;
 }
-
 
 int main(int argc, char** argv)
 {

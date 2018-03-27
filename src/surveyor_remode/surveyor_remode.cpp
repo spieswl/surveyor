@@ -3,6 +3,7 @@
 #include <rmd/publisher.h>
 #include <rmd/check_cuda_device.cuh>
 #include <rmd/se3.cuh>
+#include <rmd/seed_matrix.cuh>
 
 // ROS Includes
 #include <ros/ros.h>
@@ -15,7 +16,7 @@
 #include "surveyor_remode/DepthmapOutput.h"
 
 
-surveyor::RemodeNode::RemodeNode(ros::NodeHandle &nh, std::string data_dir) : nh_(nh)
+surveyor::RmdInput::RmdInput(ros::NodeHandle &nh, std::string data_dir) : nh_(nh)
 {
     // File path variables
     this->sequence_path_ = data_dir;
@@ -42,13 +43,13 @@ surveyor::RemodeNode::RemodeNode(ros::NodeHandle &nh, std::string data_dir) : nh
     ROS_INFO_STREAM("SURVEYOR-REMODE : Data directory path referenced to " << this->sequence_path_);
 }
 
-void surveyor::RemodeNode::initNode()
+void surveyor::RmdInput::initNode()
 {
     float cam_fx, cam_fy, cam_cx, cam_cy, omega;
     size_t cam_width, cam_height;
     float dist_k1, dist_k2, dist_p1, dist_p2;
 
-    // ----------------------------------------
+    ////////////////////////////////////////
     // Extract camera calibration parameters from the supplied dataset
     this->calib_reader_.open(this->calib_file_, std::ios::in);
 
@@ -62,7 +63,7 @@ void surveyor::RemodeNode::initNode()
     this->calib_reader_ >> cam_height;
 
     this->calib_reader_.close();
-    // ----------------------------------------
+    ////////////////////////////////////////
 
     // Scaling to undo the normalization in the camera.txt file
     cam_fx = cam_fx * cam_width;
@@ -72,7 +73,7 @@ void surveyor::RemodeNode::initNode()
 
     this->depthmap_ = std::make_shared<rmd::Depthmap>(cam_width, cam_height, cam_fx, cam_cx, cam_fy, cam_cy);
 
-    // ----------------------------------------
+    ////////////////////////////////////////
     // Extract camera distortion parameters from the supplied dataset
     this->distort_reader_.open(this->distort_file_, std::ios::in);
 
@@ -82,15 +83,14 @@ void surveyor::RemodeNode::initNode()
     this->distort_reader_ >> dist_p2;
 
     this->distort_reader_.close();
-    // ----------------------------------------
+    ////////////////////////////////////////
 
     this->depthmap_->initUndistortionMap(dist_k1, dist_k2, dist_p1, dist_p2);
 
-    // Initialize the built-in REMODE ROS publisher functionality
-    this->publisher_.reset(new rmd::Publisher(this->nh_, this->depthmap_));
+    this->output_.reset(new surveyor::RmdOutput(this->nh_, this->depthmap_));
 }
 
-void surveyor::RemodeNode::videoCallback(const sensor_msgs::ImageConstPtr &inputImage)
+void surveyor::RmdInput::videoCallback(const sensor_msgs::ImageConstPtr &inputImage)
 {
     cv::Mat img_8UC1;
     float r[9] = { 0.0 };
@@ -193,21 +193,148 @@ void surveyor::RemodeNode::videoCallback(const sensor_msgs::ImageConstPtr &input
     }
 }
 
-void surveyor::RemodeNode::denoiseAndPublishResults()
+void surveyor::RmdInput::denoiseAndPublishResults()
 {
     this->depthmap_->downloadDenoisedDepthmap(0.5f, 500);               // Important values
     this->depthmap_->downloadConvergenceMap();
 
-    std::async(std::launch::async, &rmd::Publisher::publishDepthmapAndPointCloud, *publisher_);
+    std::async(std::launch::async, &surveyor::RmdOutput::publishDepthmapAndPointCloud, *this->output_);
 }
 
-void surveyor::RemodeNode::publishConvergenceMap()
+void surveyor::RmdInput::publishConvergenceMap()
 {
     this->depthmap_->downloadConvergenceMap();
 
-    std::async(std::launch::async, &rmd::Publisher::publishConvergenceMap, *publisher_);
+    std::async(std::launch::async, &surveyor::RmdOutput::publishConvergenceMap, *this->output_);
 }
 
+////////////////////////////////////////////////////////////////////////////////
+
+surveyor::RmdOutput::RmdOutput(ros::NodeHandle &nh, std::shared_ptr<rmd::Depthmap> depthmap) : nh_(nh), pc_(new PointCloud)
+{
+    this->depthmap_ = depthmap;
+    this->colored_.create(depthmap->getHeight(), depthmap_->getWidth(), CV_8UC3);
+
+    // Output side publishers
+    image_transport::ImageTransport it(this->nh_);
+    this->depthmap_publisher_ = it.advertise("surveyor/depth", 10);
+    this->conv_publisher_ = it.advertise("surveyor/convergence", 10);
+    this->pc_publisher_ = this->nh_.advertise<PointCloud>("surveyor/pointcloud", 1);
+}
+
+void surveyor::RmdOutput::publishConvergenceMap()
+{
+    std::lock_guard<std::mutex> lock(this->depthmap_->getRefImgMutex());
+
+    const cv::Mat convergence = this->depthmap_->getConvergenceMap();
+    const cv::Mat ref_img = this->depthmap_->getReferenceImage();
+
+    cv::cvtColor(ref_img, this->colored_, CV_GRAY2BGR);
+    for (int r = 0; r < this->colored_.rows; r++)
+    {
+        for (int c = 0; c < this->colored_.cols; c++)
+        {
+            switch(convergence.at<int>(r, c))
+            {
+                case rmd::ConvergenceState::CONVERGED:
+                    this->colored_.at<cv::Vec3b>(r, c)[0] = 255;
+                    break;
+                case rmd::ConvergenceState::DIVERGED:
+                    this->colored_.at<cv::Vec3b>(r, c)[2] = 255;
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+
+    cv_bridge::CvImage cv_image;
+    cv_image.header.frame_id = "convergence_map";
+    cv_image.encoding = sensor_msgs::image_encodings::BGR8;
+    cv_image.image = this->colored_;
+
+    if(nh_.ok())
+    {
+        cv_image.header.stamp = ros::Time::now();
+        this->conv_publisher_.publish(cv_image.toImageMsg());
+        ROS_INFO_STREAM("SURVEYOR-REMODE : Publishing convergence map.");
+    }
+}
+
+void surveyor::RmdOutput::publishDepthmap() const
+{
+    cv_bridge::CvImage cv_image;
+    cv_image.header.frame_id = "depthmap";
+    cv_image.encoding = sensor_msgs::image_encodings::TYPE_32FC1;
+    cv_image.image = this->depthmap_->getDepthmap();
+    
+    if(nh_.ok())
+    {
+        cv_image.header.stamp = ros::Time::now();
+        this->depthmap_publisher_.publish(cv_image.toImageMsg());
+        ROS_INFO_STREAM("SURVEYOR-REMODE : Publishing depth map.");
+  }
+}
+
+void surveyor::RmdOutput::publishDepthmapAndPointCloud() const
+{
+    this->publishDepthmap();
+    this->publishPointCloud();
+}
+
+void surveyor::RmdOutput::publishPointCloud() const
+{
+    {
+        std::lock_guard<std::mutex> lock(this->depthmap_->getRefImgMutex());
+
+        const cv::Mat depth = this->depthmap_->getDepthmap();
+        const cv::Mat convergence = this->depthmap_->getConvergenceMap();
+        const cv::Mat ref_img = this->depthmap_->getReferenceImage();
+        const rmd::SE3<float> T_world_ref = this->depthmap_->getT_world_ref();
+
+        const float fx = this->depthmap_->getFx();
+        const float fy = this->depthmap_->getFy();
+        const float cx = this->depthmap_->getCx();
+        const float cy = this->depthmap_->getCy();
+
+        for(int y = 0; y < depth.rows; ++y)
+        {
+            for(int x = 0; x < depth.cols; ++x)
+            {
+                const float3 f = normalize( make_float3((x-cx)/fx, (y-cy)/fy, 1.0f) );
+                const float3 xyz = T_world_ref * ( f * depth.at<float>(y, x) );
+                if( rmd::ConvergenceState::CONVERGED == convergence.at<int>(y, x) )
+                {
+                    PointType p;
+                    p.x = xyz.x;
+                    p.y = xyz.y;
+                    p.z = xyz.z;
+                    const uint8_t intensity = ref_img.at<uint8_t>(y, x);
+                    p.intensity = intensity;
+                    this->pc_->push_back(p);
+                }
+            }
+        }
+    }
+    if (!this->pc_->empty())
+    {
+        if(nh_.ok())
+        {
+            uint64_t timestamp;
+            #if PCL_MAJOR_VERSION == 1 && PCL_MINOR_VERSION >= 7
+                pcl_conversions::toPCL(ros::Time::now(), timestamp);
+            #else
+                timestamp = ros::Time::now();
+            #endif
+            this->pc_->header.frame_id = "/world";
+            this->pc_->header.stamp = timestamp;
+            this->pc_publisher_.publish(this->pc_);
+            ROS_INFO_STREAM("SURVEYOR-REMODE : Publishing point cloud with" << this->pc_->size() << " points.");
+        }
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
 
 int main(int argc, char** argv)
 {
@@ -241,10 +368,10 @@ int main(int argc, char** argv)
         return 5;
     }
 
-    surveyor::RemodeNode srv_rmd_node(nh, data_dir);
+    surveyor::RmdInput srv_rmd_node(nh, data_dir);
     srv_rmd_node.initNode();
 
-    ros::Subscriber imgSub = nh.subscribe(source_param, 1, &surveyor::RemodeNode::videoCallback, &srv_rmd_node);
+    ros::Subscriber imgSub = nh.subscribe(source_param, 1, &surveyor::RmdInput::videoCallback, &srv_rmd_node);
 
     ros::Rate loop_rate(30);
     while(ros::ok())

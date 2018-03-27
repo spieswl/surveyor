@@ -64,5 +64,5 @@ catkin_package(
 add_executable(surveyor_dso src/surveyor_dso/surveyor_dso.cpp ${SURVEYOR_DSO_SRC})
 target_link_libraries(surveyor_dso ${DSO_LIBRARY} ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${Pangolin_LIBRARIES})
 
-add_executable(surveyor_remode src/surveyor_remode/surveyor_remode.cpp ${SURVEYOR_REMODE_SRC} ${REMODE_PATH}/src/publisher.cpp)
+add_executable(surveyor_remode src/surveyor_remode/surveyor_remode.cpp ${SURVEYOR_REMODE_SRC})
 target_link_libraries(surveyor_remode ${REMODE_LIBRARY} ${REMODE_CUDA_LIBRARY} ${OpenCV_LIBRARIES} ${catkin_LIBRARIES} )
