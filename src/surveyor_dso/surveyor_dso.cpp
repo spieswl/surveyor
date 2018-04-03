@@ -79,9 +79,9 @@ void videoCallback(const sensor_msgs::ImageConstPtr inputImage)
         std::vector<dso::IOWrap::Output3DWrapper*> wraps = fullSystem->outputWrapper;
         delete fullSystem;
 
-        for(dso::IOWrap::Output3DWrapper* ow : wraps)
+        for(dso::IOWrap::Output3DWrapper* output : wraps)
         {
-            ow->reset();
+            output->reset();
         }
         fullSystem = new dso::FullSystem();
         fullSystem->linearizeOperation = false;
@@ -180,10 +180,10 @@ int main(int argc, char** argv)
     ros::Subscriber imgSub = nh.subscribe(source_param, 1, &videoCallback);
     ros::spin();
 
-    for(dso::IOWrap::Output3DWrapper* ow : fullSystem->outputWrapper)
+    for(dso::IOWrap::Output3DWrapper* output : fullSystem->outputWrapper)
     {
-        ow->join();
-        delete ow;
+        output->join();
+        delete output;
     }
 
     delete undistorter;

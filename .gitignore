@@ -39,9 +39,11 @@ ehthumbs.db
 ### User-Custom Git Ignore Files Below ###
 
 *.idea*
+*.vscode*
 catkin_ws/.catkin_workspace
 catkin_ws/build/*
 catkin_ws/devel/*
 
-# Exclude images (there will be a LOT of them with large filesizes)
+# Exclude images and video (there will be a LOT of them with large filesizes)
 *.JPG
+data/*

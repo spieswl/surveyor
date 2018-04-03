@@ -16,10 +16,11 @@
 #include "surveyor_remode/DepthmapOutput.h"
 
 
-surveyor::RmdInput::RmdInput(ros::NodeHandle &nh, std::string data_dir) : nh_(nh)
+/////////////////////////// INPUT //////////////////////////
+
+surveyor::RmdInput::RmdInput(ros::NodeHandle &nh, std::string data_dir) : nh_(nh), sequence_path_(data_dir)
 {
     // File path variables
-    this->sequence_path_ = data_dir;
     this->calib_file_ = sequence_path_ + "/camera.txt";
     this->distort_file_ = sequence_path_ + "/distort.txt";
     this->pose_file_ = sequence_path_ + "/pose.txt";
@@ -101,8 +102,8 @@ void surveyor::RmdInput::videoCallback(const sensor_msgs::ImageConstPtr &inputIm
     int pose_ID = 0;
     bool valid_frame = false;
 
-    this-> frame_ID_ += 1;
-    this-> num_msgs_ += 1;
+    this->frame_ID_ += 1;
+    this->num_msgs_ += 1;
 
     cv_bridge::CvImageConstPtr cv_ptr = cv_bridge::toCvShare(inputImage, sensor_msgs::image_encodings::MONO8);
     img_8UC1 = cv_ptr->image;
@@ -161,7 +162,6 @@ void surveyor::RmdInput::videoCallback(const sensor_msgs::ImageConstPtr &inputIm
                 }
                 break;
             }
-
             case surveyor::RemodeState::UPDATE:
             {
                 this->depthmap_->update(img_8UC1, T_world_curr.inv());
@@ -178,11 +178,8 @@ void surveyor::RmdInput::videoCallback(const sensor_msgs::ImageConstPtr &inputIm
                 }
                 break;
             }
-
             default:
-            {
                 break;
-            }
         }
 
         if(this->publish_conv_every_n_ < this->num_msgs_)
@@ -208,11 +205,10 @@ void surveyor::RmdInput::publishConvergenceMap()
     std::async(std::launch::async, &surveyor::RmdOutput::publishConvergenceMap, *this->output_);
 }
 
-////////////////////////////////////////////////////////////////////////////////
+////////////////////////// OUTPUT //////////////////////////
 
-surveyor::RmdOutput::RmdOutput(ros::NodeHandle &nh, std::shared_ptr<rmd::Depthmap> depthmap) : nh_(nh), pc_(new PointCloud)
+surveyor::RmdOutput::RmdOutput(ros::NodeHandle &nh, std::shared_ptr<rmd::Depthmap> depthmap) : nh_(nh), pc_(new PointCloud), depthmap_(depthmap)
 {
-    this->depthmap_ = depthmap;
     this->colored_.create(depthmap->getHeight(), depthmap_->getWidth(), CV_8UC3);
 
     // Output side publishers
@@ -237,11 +233,15 @@ void surveyor::RmdOutput::publishConvergenceMap()
             switch(convergence.at<int>(r, c))
             {
                 case rmd::ConvergenceState::CONVERGED:
+                {
                     this->colored_.at<cv::Vec3b>(r, c)[0] = 255;
                     break;
+                }
                 case rmd::ConvergenceState::DIVERGED:
+                {
                     this->colored_.at<cv::Vec3b>(r, c)[2] = 255;
                     break;
+                }
                 default:
                     break;
             }
@@ -321,11 +321,13 @@ void surveyor::RmdOutput::publishPointCloud() const
         if(nh_.ok())
         {
             uint64_t timestamp;
+
             #if PCL_MAJOR_VERSION == 1 && PCL_MINOR_VERSION >= 7
                 pcl_conversions::toPCL(ros::Time::now(), timestamp);
             #else
                 timestamp = ros::Time::now();
             #endif
+            
             this->pc_->header.frame_id = "/world";
             this->pc_->header.stamp = timestamp;
             this->pc_publisher_.publish(this->pc_);
