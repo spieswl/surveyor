@@ -85,8 +85,7 @@ The `surveyor-dso` node is a ROS wrapper, written in C++, to Direct Sparse Odome
 
 ##### Subscribing and Publishing
 
-- This node **subscribes** to...
-    --`/camera_emu/image` ([sensor_msgs/Image.msg](http://docs.ros.org/api/sensor_msgs/html/msg/Image.html)).
+- This node subscribes to `/camera_emu/image` ([sensor_msgs/Image.msg](http://docs.ros.org/api/sensor_msgs/html/msg/Image.html)).
 - This node does not publish on any topics.
 
 ##### Services
@@ -103,14 +102,11 @@ The `surveyor-remode` node is a ROS wrapper, written in C++, to Regularized Mono
 
 ##### Subscribing and Publishing
 
-- This node **subscribes** to...
-    --`/camera_emu/image` ([sensor_msgs/Image.msg](http://docs.ros.org/api/sensor_msgs/html/msg/Image.html))
+- This node subscribes to `/camera_emu/image` ([sensor_msgs/Image.msg](http://docs.ros.org/api/sensor_msgs/html/msg/Image.html)).
 
-- This node **publishes** to...
-    -- `/surveyor/depth` ([sensor_msgs/Image.msg](http://docs.ros.org/api/sensor_msgs/html/msg/Image.html))
-    -- `/surveyor/convergence` ([sensor_msgs/Image.msg](http://docs.ros.org/api/sensor_msgs/html/msg/Image.html))
-    -- `/surveyor/pointcloud` ([sensor_msgs/PointCloud.msg](http://docs.ros.org/api/sensor_msgs/html/msg/PointCloud.html))
-    
+- This node publishes to `/surveyor/depth` ([sensor_msgs/Image.msg](http://docs.ros.org/api/sensor_msgs/html/msg/Image.html)).
+- This node publishes to `/surveyor/convergence` ([sensor_msgs/Image.msg](http://docs.ros.org/api/sensor_msgs/html/msg/Image.html)).
+- This node publishes to `/surveyor/pointcloud` ([sensor_msgs/PointCloud.msg](http://docs.ros.org/api/sensor_msgs/html/msg/PointCloud.html)).
 
 ##### Services
 
