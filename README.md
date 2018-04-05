@@ -29,7 +29,7 @@ The final output of this system is a dense point cloud usable in architectural, 
 
 - **opencv**: By default, OpenCV3 is included in the `ros-kinetic` distribution.
 - [**dso**](https://github.com/JakobEngel/dso#2-installation): Follow the instructions here to install and build DSO.
-- [**rpg_open_remode**](https://github.com/uzh-rpg/rpg_open_remode/wiki/Build-REMODE): Follow the instructions here to install and build REMODE. The ROS component is **REQUIRED** at present. This is one of the first things I would like to remove, which would eliminate any SVO dependencies.
+- [**rpg_open_remode**](https://github.com/uzh-rpg/rpg_open_remode/wiki/Build-REMODE): Follow the instructions here to install and build REMODE *without ROS*.
 
 #### Optional
 
@@ -85,7 +85,8 @@ The `surveyor-dso` node is a ROS wrapper, written in C++, to Direct Sparse Odome
 
 ##### Subscribing and Publishing
 
-- This node subscribes to, by default, `/camera_emu/image` ([sensor_msgs/Image.msg](http://docs.ros.org/api/sensor_msgs/html/msg/Image.html)).
+- This node **subscribes** to...
+    --`/camera_emu/image` ([sensor_msgs/Image.msg](http://docs.ros.org/api/sensor_msgs/html/msg/Image.html)).
 - This node does not publish on any topics.
 
 ##### Services
@@ -102,10 +103,14 @@ The `surveyor-remode` node is a ROS wrapper, written in C++, to Regularized Mono
 
 ##### Subscribing and Publishing
 
-- This node subscribes to, by default, `/camera_emu/image` ([sensor_msgs/Image.msg](http://docs.ros.org/api/sensor_msgs/html/msg/Image.html)).
-- This node does not publish on any topics.
+- This node **subscribes** to...
+    --`/camera_emu/image` ([sensor_msgs/Image.msg](http://docs.ros.org/api/sensor_msgs/html/msg/Image.html))
 
-**NOTE**: Indirectly, `rpg_open_remode` will publish point clouds to a topic named `/remode/pointcloud` ([sensor_msgs/PointCloud](http://docs.ros.org/api/sensor_msgs/html/msg/PointCloud.html)).
+- This node **publishes** to...
+    -- `/surveyor/depth` ([sensor_msgs/Image.msg](http://docs.ros.org/api/sensor_msgs/html/msg/Image.html))
+    -- `/surveyor/convergence` ([sensor_msgs/Image.msg](http://docs.ros.org/api/sensor_msgs/html/msg/Image.html))
+    -- `/surveyor/pointcloud` ([sensor_msgs/PointCloud.msg](http://docs.ros.org/api/sensor_msgs/html/msg/PointCloud.html))
+    
 
 ##### Services
 

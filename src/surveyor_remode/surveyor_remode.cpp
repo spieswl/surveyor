@@ -136,10 +136,6 @@ void surveyor::RmdInput::videoCallback(const sensor_msgs::ImageConstPtr &inputIm
                 input_string >> t[k];
             }
 
-            // DEBUG
-            std::cout << "DEBUG - POSE ID : " << pose_ID << std::endl;
-            // END DEBUG
-
             break;
         }
     }
